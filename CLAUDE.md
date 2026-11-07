@@ -1,5 +1,7 @@
 # EVP — Edificios VIP Punta del Este
 
+> **Estado:** prototipo funcional implementado (React + Vite + Tailwind 4) con las 8 pantallas. Ver `README.md`. Contexto de diseño vigente: `PRODUCT.md` (estrategia) y `DESIGN.md` (tokens, tipografía, motion). Antes de cambiar la UI, leerlos y respetar los tokens de `src/styles.css`.
+
 Plataforma web responsiva (PWA, sin descarga obligatoria) para alquiler temporario de unidades en edificios VIP de 4-5 estrellas en Punta del Este (Mansa, Brava, La Barra, Manantiales, Península). Contexto completo de negocio: `docs/contexto_maestro_evp.md`. Leerlo antes de diseñar o programar.
 
 ## Dirección de diseño (brief)
