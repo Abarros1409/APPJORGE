@@ -3,7 +3,8 @@ import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { BuildingVisual } from '../components/units'
 import { Button, ButtonLink, Field, InfoNote, Seal, Stars, Stepper, Toggle, cx } from '../components/ui'
-import { AMENITIES, BUILDINGS, BUILDING_BY_ID, DEMO_OWNER, ZONES, ZONE_NAME, type Prices, type Unit } from '../lib/data'
+import { AMENITIES, BUILDINGS, BUILDING_BY_ID, ZONES, ZONE_NAME, type Prices, type Unit } from '../lib/data'
+import { useAuth } from '../lib/auth'
 import { breakdown, usd } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { PERIOD_GROUPS, PERIOD_BY_ID, type PeriodId } from '../lib/periods'
@@ -28,7 +29,8 @@ async function downscale(file: File, max = 1400): Promise<string> {
 
 export default function Publish() {
   const { t, lang } = useLang()
-  const { publishUnit, units } = useStore()
+  const { publishUnit, allUnits: units } = useStore()
+  const { user, addRole } = useAuth()
   const fid = useId()
   const [step, setStep] = useState(0)
   const [attempted, setAttempted] = useState(false)
@@ -148,12 +150,14 @@ export default function Publish() {
       channel: { type: 'owner' },
       prices: numericPrices,
       booked: [],
-      ownerId: DEMO_OWNER.id,
+      ownerId: user!.id,
+      verification: 'titulo',
       photos: photos.map((p) => p.src),
       view: sea ? 'frente' : 'lateral',
       createdAt: new Date().toISOString(),
     }
     publishUnit(unit)
+    addRole('owner')
     setPublished(unit)
     window.scrollTo({ top: 0 })
   }
@@ -167,19 +171,22 @@ export default function Publish() {
       <div className="pt-28 pb-24 md:pt-36">
         <div className="shell flex max-w-3xl flex-col items-start gap-8">
           <CheckCircle size={44} weight="fill" className="text-ok" />
-          <h1 className="f-display text-[clamp(2.2rem,5vw,3.75rem)]">{t('Tu unidad está publicada.', 'Sua unidade está publicada.')}</h1>
+          <h1 className="f-display text-[clamp(2.2rem,5vw,3.75rem)]">{t('Tu unidad está cargada.', 'Sua unidade está cadastrada.')}</h1>
           <p className="text-[1.125rem] text-mute">
             {t(
-              `La cargaste en ${mm} min ${ss} s. EVP revisa las fotos en las próximas 24 h; mientras tanto, la unidad ya aparece en el catálogo como «Directo de Dueño».`,
-              `Você cadastrou em ${mm} min ${ss} s. A EVP revisa as fotos nas próximas 24 h; enquanto isso, a unidade já aparece no catálogo como «Direto do Proprietário».`,
+              `La cargaste en ${mm} min ${ss} s. Falta un paso: subí en tu panel un documento que acredite la titularidad (título o boleto de compraventa). Cuando EVP lo valide, la unidad se publica como «Directo de Dueño».`,
+              `Você cadastrou em ${mm} min ${ss} s. Falta uma etapa: envie no seu painel um documento que comprove a titularidade (escritura ou compromisso de compra e venda). Quando a EVP validar, a unidade é publicada como «Direto do Proprietário».`,
             )}
           </p>
+          <InfoNote>
+            {t('Así nadie puede publicar un departamento que no es suyo. Hasta la validación, solo vos ves la unidad.', 'Assim ninguém pode publicar um apartamento que não é seu. Até a validação, só você vê a unidade.')}
+          </InfoNote>
           <div className="flex flex-wrap gap-3">
-            <ButtonLink to={`/unidades/${published.id}`} trailing>
-              {t('Ver mi publicación', 'Ver meu anúncio')}
+            <ButtonLink to="/panel" trailing>
+              {t('Subir documento de titularidad', 'Enviar documento de titularidade')}
             </ButtonLink>
-            <ButtonLink to="/panel" variant="outline">
-              {t('Ir a mi panel', 'Ir para o meu painel')}
+            <ButtonLink to={`/unidades/${published.id}`} variant="outline">
+              {t('Ver vista previa', 'Ver pré-visualização')}
             </ButtonLink>
           </div>
         </div>
@@ -475,7 +482,7 @@ export default function Publish() {
             ))}
           </ul>
           <p className="px-1 text-[0.8125rem] text-mute">
-            {t('Publicás como', 'Publicando como')} {DEMO_OWNER.name}. {t('Tus datos personales no se muestran en la publicación.', 'Seus dados pessoais não aparecem no anúncio.')}
+            {t('Publicás como', 'Publicando como')} {user?.name || user?.email}. {t('Tus datos personales no se muestran en la publicación.', 'Seus dados pessoais não aparecem no anúncio.')}
           </p>
         </aside>
       </div>

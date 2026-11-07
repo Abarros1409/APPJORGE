@@ -4,12 +4,13 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { FloorPlan } from '../components/FloorPlan'
 import { ArchScene } from '../components/ArchScene'
 import { Features, FavoriteButton, PeriodSelector, PriceBreakdown, Specs, UnitVisual } from '../components/units'
-import { Button, ChannelTag, Seal, Stars, cx } from '../components/ui'
+import { Button, ChannelTag, InfoNote, Seal, Stars, cx } from '../components/ui'
 import { AMENITIES, BUILDING_BY_ID, ZONE_NAME } from '../lib/data'
 import { breakdown, minPrice, usd } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { isAvailable, isPeriodId, PERIOD_BY_ID, type PeriodId } from '../lib/periods'
 import { useStore } from '../lib/store'
+import { useAuth } from '../lib/auth'
 import NotFound from './NotFound'
 
 export default function UnitPage() {
@@ -19,8 +20,10 @@ export default function UnitPage() {
   const nav = useNavigate()
   const [sp, setSp] = useSearchParams()
   const selectorRef = useRef<HTMLDivElement>(null)
+  const { user } = useAuth()
   const u = unitById(id)
-  if (!u) return <NotFound />
+  // Unverified units exist only for their owner (preview); guests get a plain 404.
+  if (!u || (u.verification && u.ownerId !== user?.id)) return <NotFound />
   const b = BUILDING_BY_ID[u.buildingId]
   const raw = sp.get('periodo')
   const period: PeriodId | null = isPeriodId(raw) && u.prices[raw] !== undefined && isAvailable(raw, u.booked) ? raw : null
@@ -49,6 +52,17 @@ export default function UnitPage() {
   return (
     <div className="pt-24 pb-32 md:pt-28 lg:pb-24">
       <div className="shell">
+        {u.verification && (
+          <div className="mb-6">
+            <InfoNote tone="ocaso">
+              <strong>{t('Vista previa privada.', 'Pré-visualização privada.')}</strong>{' '}
+              {u.verification === 'titulo'
+                ? t('Los huéspedes no ven esta unidad hasta que subas el documento de titularidad y EVP lo valide.', 'Os hóspedes não veem esta unidade até você enviar o documento de titularidade e a EVP validá-lo.')
+                : t('EVP está revisando tu documento de titularidad. Cuando lo apruebe, la unidad se publica.', 'A EVP está revisando seu documento de titularidade. Quando aprovar, a unidade é publicada.')}{' '}
+              <Link to="/panel" className="font-medium text-marine-strong underline-offset-4 hover:underline">{t('Ir al panel', 'Ir ao painel')}</Link>
+            </InfoNote>
+          </div>
+        )}
         <Link to="/buscar" className="mb-5 inline-flex min-h-10 items-center gap-2 text-[0.875rem] text-mute hover:text-ink">
           <ArrowLeft size={16} />
           {t('Volver a resultados', 'Voltar aos resultados')}

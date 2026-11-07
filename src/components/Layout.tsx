@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
+import { Initial } from './auth-ui'
+import { isOwner, useAuth } from '../lib/auth'
 import { useLang } from '../lib/i18n'
 import { useStore } from '../lib/store'
 import { cx } from './ui'
@@ -50,8 +52,66 @@ function LangSwitch({ className }: { className?: string }) {
   )
 }
 
+function AccountMenu() {
+  const { t } = useLang()
+  const { user, logout } = useAuth()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const loc = useLocation()
+  const navigate = useNavigate()
+  useEffect(() => setOpen(false), [loc.pathname, loc.hash])
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('pointerdown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+  if (!user) {
+    return (
+      <Link to={`/ingresar?next=${encodeURIComponent(loc.pathname + loc.search)}`} className="hidden min-h-10 items-center rounded-full bg-on-ink px-4 text-[0.875rem] font-medium text-ink transition-colors duration-200 hover:bg-white sm:inline-flex">
+        {t('Ingresar', 'Entrar')}
+      </Link>
+    )
+  }
+  const item = 'block rounded-[10px] px-3 py-2.5 text-[0.9375rem] text-ink hover:bg-mist'
+  return (
+    <div ref={ref} className="relative hidden sm:block">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="true"
+        aria-controls="account-menu"
+        onClick={() => setOpen((o) => !o)}
+        className="flex min-h-10 items-center gap-2 rounded-full bg-on-ink/10 py-1 pr-4 pl-1 text-[0.875rem] font-medium transition-colors hover:bg-on-ink/16"
+      >
+        <Initial name={user.name} email={user.email} />
+        <span className="max-w-[9rem] truncate">{user.name ? user.name.split(' ')[0] : t('Mi cuenta', 'Minha conta')}</span>
+      </button>
+      {open && (
+        <div id="account-menu" className="absolute top-[calc(100%+0.75rem)] right-0 w-64 rounded-[16px] bg-bg p-2 text-ink shadow-[var(--shadow-ambient)] ring-1 ring-line">
+          <p className="truncate px-3 pt-2 pb-3 text-[0.8125rem] text-mute">{user.email}</p>
+          <Link to="/cuenta" className={item}>{t('Mi cuenta', 'Minha conta')}</Link>
+          <Link to="/cuenta#reservas" className={item}>{t('Mis reservas', 'Minhas reservas')}</Link>
+          {isOwner(user) && <Link to="/panel" className={item}>{t('Panel de propietario', 'Painel de proprietário')}</Link>}
+          <Link to="/cuenta#seguridad" className={item}>{t('Seguridad', 'Segurança')}</Link>
+          <button type="button" onClick={() => { logout(); navigate('/') }} className={cx(item, 'w-full border-t border-line text-left')}>
+            {t('Cerrar sesión', 'Sair')}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Nav() {
   const { t } = useLang()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const links = useNavLinks()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -106,9 +166,7 @@ function Nav() {
           </ul>
           <div className="flex items-center gap-2">
             <LangSwitch className="hidden sm:flex" />
-            <Link to="/panel" className="hidden min-h-10 items-center rounded-full bg-on-ink px-4 text-[0.875rem] font-medium text-ink transition-colors duration-200 hover:bg-white sm:inline-flex">
-              {t('Mi panel', 'Meu painel')}
-            </Link>
+            <AccountMenu />
             <button
               type="button"
               className="relative flex size-11 items-center justify-center rounded-full bg-on-ink/10 lg:hidden"
@@ -133,7 +191,12 @@ function Nav() {
         aria-hidden={!open}
       >
         <ul className="flex flex-col gap-1">
-          {[...links, { to: '/panel', label: t('Mi panel de propietario', 'Meu painel de proprietário') }].map((l, i) => (
+          {[
+            ...links,
+            ...(user
+              ? [{ to: '/cuenta', label: t('Mi cuenta', 'Minha conta') }, ...(isOwner(user) ? [{ to: '/panel', label: t('Panel de propietario', 'Painel de proprietário') }] : [])]
+              : [{ to: '/ingresar', label: t('Ingresar', 'Entrar') }]),
+          ].map((l, i) => (
             <li
               key={l.to}
               className={cx('transition-[opacity,translate] duration-700 ease-[var(--ease-fluid)]', open ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0')}
@@ -145,6 +208,11 @@ function Nav() {
             </li>
           ))}
         </ul>
+        {user && (
+          <button type="button" tabIndex={open ? 0 : -1} onClick={() => { logout(); navigate('/') }} className="mt-6 self-start text-[1rem] text-on-ink-mute underline-offset-4 hover:underline">
+            {t('Cerrar sesión', 'Sair')} · {user.email}
+          </button>
+        )}
         <div className="mt-auto flex items-center justify-between">
           <LangSwitch />
           <span className="text-[0.8125rem] text-on-ink-mute">Punta del Este · Uruguay</span>
@@ -182,7 +250,7 @@ function Footer() {
           <ul className="flex flex-col gap-2.5 text-[0.9375rem]">
             <li><Link className="hover:text-ocaso" to="/propietarios">{t('Por qué EVP', 'Por que EVP')}</Link></li>
             <li><Link className="hover:text-ocaso" to="/propietarios/publicar">{t('Publicar mi unidad', 'Publicar minha unidade')}</Link></li>
-            <li><Link className="hover:text-ocaso" to="/panel">{t('Mi panel', 'Meu painel')}</Link></li>
+            <li><Link className="hover:text-ocaso" to="/panel">{t('Panel de propietario', 'Painel de proprietário')}</Link></li>
           </ul>
         </div>
         <div>

@@ -5,12 +5,14 @@ import { Logo } from '../components/Layout'
 import { Button } from '../components/ui'
 import { useLang } from '../lib/i18n'
 import { useStore } from '../lib/store'
+import { useAuth } from '../lib/auth'
 
 export default function ContractPage() {
   const { code = '' } = useParams()
   const { t } = useLang()
   const { bookings, unitById } = useStore()
-  const bk = bookings.find((b) => b.code === code)
+  const { user } = useAuth()
+  const bk = bookings.find((b) => b.code === code && b.guest.email.toLowerCase() === user?.email)
   const u = bk ? unitById(bk.unitId) : undefined
   return (
     <div className="min-h-dvh bg-mist py-8 print:bg-white print:py-0">

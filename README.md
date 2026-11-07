@@ -32,6 +32,33 @@ npm run build && npm run preview
 | `/panel` | Panel del propietario | Montos en custodia y transferidos, ocupación por período de cada unidad y reservas con su estado de liquidación |
 | `/administraciones` | Administraciones y portería | Propuesta de valor, proceso de alianza y formulario de relevamiento |
 
+## Cuentas y seguridad
+
+| Ruta | Qué hace |
+|---|---|
+| `/ingresar` | Ingreso sin contraseña: código de 6 dígitos por email y, para propietarios, un segundo código por SMS |
+| `/cuenta` | Perfil, mis reservas, verificación en dos pasos, dispositivos con sesión abierta, descargar mis datos y eliminar la cuenta |
+
+- **Cuentas de demo:**
+  - `valentina@ejemplo.com`: propietaria, con verificación en dos pasos.
+  - `martin@ejemplo.com`: huésped con una reserva.
+  - Cualquier otro email crea una cuenta nueva.
+- **Códigos en pantalla:** como no hay servidor de email ni de SMS, los códigos aparecen en una "bandeja de demo" en la pantalla.
+- **Permisos:**
+  - Cada huésped ve solo sus reservas y contratos.
+  - Cada propietario ve solo sus unidades.
+  - Las rutas privadas piden login.
+- **Unidades nuevas:** quedan ocultas hasta que EVP valida el documento de titularidad.
+- **Acciones sensibles:** cambiar la cuenta de cobro o eliminar la cuenta pide un código nuevo aunque la sesión esté abierta.
+- **Controles:**
+  - Bloqueo tras 5 códigos incorrectos.
+  - Cierre de sesión por inactividad (30 min).
+  - Redirecciones post-login solo a rutas del propio sitio.
+
+Requisitos de producción para el pliego: [`docs/seguridad_y_acceso.md`](docs/seguridad_y_acceso.md). Casos de prueba: [`docs/casos_de_prueba_seguridad.md`](docs/casos_de_prueba_seguridad.md).
+
+> El login del prototipo corre en el navegador y **no es una barrera de seguridad real**. Sirve para diseñar y validar los flujos. En producción la autorización la hace el servidor.
+
 Interfaz en **español y portugués** (selector ES/PT; detecta el idioma del navegador). Precios siempre en USD.
 
 ## Importante: qué es de demostración
@@ -39,7 +66,8 @@ Interfaz en **español y portugués** (selector ES/PT; detecta el idioma del nav
 - **Catálogo ficticio.** Los 10 edificios, los arquitectos y las inmobiliarias son inventados.
 - **Ilustraciones en lugar de fotos.** Las imágenes de los edificios son ilustraciones arquitectónicas procedurales (`src/components/ArchScene.tsx`) hasta que EVP produzca las fotos profesionales. Cada unidad acepta `photos[]`: las fotos que carga el propietario se muestran tal cual.
 - **Pagos simulados.** No se conecta con Stripe, dLocal ni EBANX y no se cobra nada. Tarjeta de prueba: `4242 4242 4242 4242`.
-- **Datos guardados solo en el navegador.** Viven en `localStorage`; el botón "Reiniciar datos de demo" del pie de página los resetea. En producción esto lo reemplaza un backend.
+- **Datos guardados solo en el navegador.** Viven en `localStorage`, incluidas las cuentas y las sesiones; el botón "Reiniciar datos de demo" del pie de página resetea reservas y publicaciones. En producción esto lo reemplazan un backend y un proveedor de autenticación.
+- **Emails y SMS simulados.** Se muestran en la bandeja de demo; no se envía nada.
 - **Contrato sin validar.** El texto en `src/components/Contract.tsx` es un **borrador modelo**: tiene que revisarlo un escribano o abogado uruguayo.
 
 ## Stack
@@ -52,4 +80,7 @@ React 19 · React Router 7 · Vite 7 · Tailwind CSS 4 · GSAP (ScrollTrigger) �
 - `DESIGN.md`: paleta OKLCH "Ocaso en la Mansa", tipografía, forma, motion e imaginería.
 - `.claude/skills/`: las skills de diseño usadas (ver `CLAUDE.md`).
 
-Verificado con axe-core (WCAG 2.1 AA, sin violaciones en las 12 rutas), con el detector de anti-patrones de `impeccable` (sin hallazgos) y con flujos end-to-end en Playwright (reserva completa y publicación con fotos).
+Verificado con:
+- **axe-core** (WCAG 2.1 AA): sin violaciones en todas las rutas, incluidas login, cuenta, panel y el diálogo de verificación.
+- **Detector de anti-patrones de `impeccable`:** sin hallazgos.
+- **Flujos end-to-end en Playwright:** reserva completa, publicación con fotos y los 22 casos de seguridad.

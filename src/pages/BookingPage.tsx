@@ -8,6 +8,7 @@ import { dateRange, dateTime, usd } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { PERIOD_BY_ID } from '../lib/periods'
 import { bookingStatus, useStore } from '../lib/store'
+import { useAuth } from '../lib/auth'
 import NotFound from './NotFound'
 
 export function useInventoryItems(garage: boolean) {
@@ -29,7 +30,10 @@ export default function BookingPage() {
   const [sp] = useSearchParams()
   const { t, lang } = useLang()
   const { bookings, unitById, completeCheckin } = useStore()
-  const bk = bookings.find((b) => b.code === code)
+  const { user } = useAuth()
+  // Authorization: a booking is visible only to its holder. Same response as "not found"
+  // so codes can't be probed (production: enforced by row-level security on the server).
+  const bk = bookings.find((b) => b.code === code && b.guest.email.toLowerCase() === user?.email)
   const u = bk ? unitById(bk.unitId) : undefined
   const items = useInventoryItems(!!u?.garage)
   const [checkedMap, setCheckedMap] = useState<Record<string, boolean>>({})

@@ -321,6 +321,13 @@ export type Unit = {
   /** View orientation used for scenes. */
   view: 'frente' | 'lateral' | 'parque'
   createdAt?: string
+  /**
+   * Ownership verification. Undefined = verified and public.
+   * 'titulo': waiting for the owner's title document; 'revision': EVP is checking it.
+   * Units are hidden from guests until verified (prevents listing someone else's flat).
+   */
+  verification?: 'titulo' | 'revision'
+  titleDoc?: { name: string; at: string }
 }
 
 const r50 = (n: number) => Math.round(n / 50) * 50

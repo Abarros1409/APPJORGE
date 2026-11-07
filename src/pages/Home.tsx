@@ -313,7 +313,7 @@ function Compare() {
             </li>
           ))}
         </ul>
-        <div className="hidden overflow-hidden rounded-[18px] bg-bg ring-1 ring-line md:block">
+        <div className="relative hidden overflow-hidden rounded-[18px] bg-bg ring-1 ring-line md:block">
           <table className="w-full border-collapse text-left text-[0.9375rem]">
             <thead>
               <tr className="border-b border-line">

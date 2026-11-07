@@ -9,6 +9,8 @@ import { bookingCode, breakdown, dateRange, usd } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { isAvailable, isPeriodId, PERIOD_BY_ID } from '../lib/periods'
 import { useStore, type Booking, type PaymentMethod } from '../lib/store'
+import { useAuth } from '../lib/auth'
+import { LoginFlow } from '../components/auth-ui'
 
 type Guest = Booking['guest']
 
@@ -77,6 +79,7 @@ export default function Checkout() {
   const [sp] = useSearchParams()
   const { t, lang } = useLang()
   const { unitById, addBooking } = useStore()
+  const { user, updateUser } = useAuth()
   const nav = useNavigate()
   const u = unitById(id)
   const raw = sp.get('periodo')
@@ -99,6 +102,10 @@ export default function Checkout() {
   useEffect(() => {
     headingRef.current?.focus()
   }, [step])
+  // The booking holder's email is the verified account email (it's what authorizes access to the booking later).
+  useEffect(() => {
+    if (user) setGuest((g) => ({ ...g, email: user.email, name: g.name || user.name }))
+  }, [user])
 
   if (!u || !isPeriodId(raw)) return <Navigate to={u ? `/unidades/${u.id}` : '/buscar'} replace />
   const period = raw
@@ -137,6 +144,7 @@ export default function Checkout() {
       window.setTimeout(() => {
         const now = new Date().toISOString()
         done.current = true
+        if (user && !user.name) updateUser({ name: guest.name.trim() })
         addBooking({
           code,
           unitId: u.id,
@@ -196,6 +204,22 @@ export default function Checkout() {
         </ol>
 
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-16">
+          {step === 0 && !user ? (
+            <section className="flex flex-col gap-6" aria-labelledby="gate-title">
+              <h1 id="gate-title" className="f-h2 text-[clamp(1.8rem,3.2vw,2.6rem)]">
+                {t('Primero, verificá tu email', 'Primeiro, verifique seu e-mail')}
+              </h1>
+              <p className="max-w-[52ch] text-mute">
+                {t(
+                  'Es tu cuenta EVP: ahí recibís el contrato y desde ahí accedés a tu reserva. Sin contraseñas: te mandamos un código.',
+                  'É sua conta EVP: nela você recebe o contrato e acessa sua reserva. Sem senhas: enviamos um código.',
+                )}
+              </p>
+              <div className="max-w-md">
+                <LoginFlow onDone={() => window.scrollTo({ top: 0 })} compact />
+              </div>
+            </section>
+          ) : (
           <form onSubmit={next} noValidate className="flex flex-col gap-8">
             <h1 ref={headingRef} tabIndex={-1} className="f-h2 text-[clamp(1.8rem,3.2vw,2.6rem)] outline-none">
               {step === 0 && t('¿Quién viaja?', 'Quem vai viajar?')}
@@ -210,8 +234,8 @@ export default function Checkout() {
                     <input {...inputProps('name', errors1)} autoComplete="name" value={guest.name} onChange={(e) => setGuest({ ...guest, name: e.target.value })} />
                   </Field>
                 </div>
-                <Field label="Email" htmlFor={`${fid}-email`} error={err('email', errors1)} hint={t('Ahí te enviamos el contrato firmado.', 'Enviaremos o contrato assinado para este e-mail.')}>
-                  <input {...inputProps('email', errors1)} type="email" inputMode="email" autoComplete="email" value={guest.email} onChange={(e) => setGuest({ ...guest, email: e.target.value })} />
+                <Field label="Email" htmlFor={`${fid}-email`} error={err('email', errors1)} hint={t('Verificado. Ahí te enviamos el contrato firmado.', 'Verificado. Enviaremos o contrato assinado para este e-mail.')}>
+                  <input {...inputProps('email', errors1)} type="email" readOnly value={guest.email} className="field bg-mist text-mute" />
                 </Field>
                 <Field label={t('Teléfono / WhatsApp', 'Telefone / WhatsApp')} htmlFor={`${fid}-phone`} error={err('phone', errors1)}>
                   <input {...inputProps('phone', errors1)} type="tel" inputMode="tel" autoComplete="tel" placeholder={lang === 'pt' ? '+55 11 9…' : '+54 9 11…'} value={guest.phone} onChange={(e) => setGuest({ ...guest, phone: e.target.value })} />
@@ -393,6 +417,7 @@ export default function Checkout() {
               </Button>
             </div>
           </form>
+          )}
 
           <aside aria-label={t('Resumen de la reserva', 'Resumo da reserva')} className="lg:order-none">
             <div className="flex flex-col gap-5 rounded-[22px] p-5 ring-1 ring-line lg:sticky lg:top-28">

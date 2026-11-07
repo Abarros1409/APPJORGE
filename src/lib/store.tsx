@@ -115,7 +115,12 @@ function load(): State {
 }
 
 type Ctx = State & {
+  /** Units visible to guests (ownership verified). */
   units: Unit[]
+  /** Every unit, including those pending verification (owner panel only). */
+  allUnits: Unit[]
+  submitTitleDoc: (unitId: string, fileName: string) => void
+  approveUnit: (unitId: string) => void
   unitById: (id: string) => Unit | undefined
   addBooking: (b: Booking) => void
   completeCheckin: (code: string, notes: string) => void
@@ -142,15 +147,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [state])
 
-  const units = useMemo(() => {
+  const allUnits = useMemo(() => {
     const all = [...UNITS, ...state.ownerUnits]
     return all.map((u) => {
       const extra = state.bookings.filter((b) => b.unitId === u.id).map((b) => b.period)
       return extra.length ? { ...u, booked: Array.from(new Set([...u.booked, ...extra])) } : u
     })
   }, [state.ownerUnits, state.bookings])
+  const units = useMemo(() => allUnits.filter((u) => !u.verification), [allUnits])
 
-  const unitById = useCallback((id: string) => units.find((u) => u.id === id), [units])
+  const unitById = useCallback((id: string) => allUnits.find((u) => u.id === id), [allUnits])
+
+  const submitTitleDoc = useCallback(
+    (unitId: string, name: string) =>
+      setState((s) => ({ ...s, ownerUnits: s.ownerUnits.map((u) => (u.id === unitId ? { ...u, verification: 'revision', titleDoc: { name, at: new Date().toISOString() } } : u)) })),
+    [],
+  )
+  const approveUnit = useCallback(
+    (unitId: string) => setState((s) => ({ ...s, ownerUnits: s.ownerUnits.map((u) => (u.id === unitId ? { ...u, verification: undefined } : u)) })),
+    [],
+  )
 
   const addBooking = useCallback((b: Booking) => setState((s) => ({ ...s, bookings: [b, ...s.bookings] })), [])
 
@@ -190,8 +206,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const resetDemo = useCallback(() => setState(SEED_STATE), [])
 
   const value = useMemo<Ctx>(
-    () => ({ ...state, units, unitById, addBooking, completeCheckin, releaseNow, publishUnit, addLead, toggleFavorite, storageWarning, resetDemo }),
-    [state, units, unitById, addBooking, completeCheckin, releaseNow, publishUnit, addLead, toggleFavorite, storageWarning, resetDemo],
+    () => ({ ...state, units, allUnits, submitTitleDoc, approveUnit, unitById, addBooking, completeCheckin, releaseNow, publishUnit, addLead, toggleFavorite, storageWarning, resetDemo }),
+    [state, units, allUnits, submitTitleDoc, approveUnit, unitById, addBooking, completeCheckin, releaseNow, publishUnit, addLead, toggleFavorite, storageWarning, resetDemo],
   )
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }
