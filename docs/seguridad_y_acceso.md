@@ -18,13 +18,13 @@
 
 | Rol | Cómo se crea | Qué puede ver y hacer | Qué NO puede ver |
 |---|---|---|---|
-| **Huésped** | Automáticamente al verificar su email en el checkout | Sus reservas, contratos, pagos e inventarios | Datos de otros huéspedes; identidad y datos bancarios del propietario |
-| **Propietario** | Al publicar su primera unidad | Sus unidades, sus reservas (huésped abreviado), sus liquidaciones y su cuenta de cobro | Documento, email o teléfono del huésped; unidades de otros dueños |
-| **Inmobiliaria aliada** | Alta manual por EVP (cuenta de organización con varios miembros) | Unidades y reservas de su inmobiliaria | Unidades de otras inmobiliarias o de dueños directos |
-| **Administración / portería** | Alta manual por EVP, asociada a un edificio | Lista de ingresos de *su* edificio: nombre, documento, cantidad de huéspedes y fechas, para el registro | Montos, datos de pago, contratos |
-| **Personal EVP** | Interno | Según función: soporte, verificación de titularidad, finanzas | Lo que su función no requiere. Finanzas no ve documentos; soporte no ve datos bancarios |
+| **Interesado / huésped** | Automáticamente al verificar su email para enviar una consulta | Sus consultas y unidades guardadas; el teléfono del anunciante **solo** de las unidades que consultó | Consultas de otros; documento y email del propietario |
+| **Propietario** | Al publicar su primera unidad | Sus unidades, su disponibilidad y las consultas sobre ellas, con los datos de contacto que el interesado autorizó compartir | Consultas sobre unidades de otros dueños; documentos de otros |
+| **Inmobiliaria aliada** | Alta manual por EVP (cuenta de organización con varios miembros) | Unidades y consultas de su inmobiliaria | Unidades de otras inmobiliarias o de dueños directos |
+| **Administración / portería** | Alta manual por EVP, asociada a un edificio | Ficha de *su* edificio y unidades publicadas en él | Consultas, datos de contacto, documentos |
+| **Personal EVP** | Interno | Según función: carga de fichas, verificación de titularidad, moderación de reportes, soporte | Lo que su función no requiere: soporte no ve documentos de titularidad |
 
-Un mismo usuario puede tener varios roles (por ejemplo, un propietario que también reserva como huésped en otro edificio). Usa un solo login y cambia de vista dentro de la app.
+Un mismo usuario puede tener varios roles (por ejemplo, un propietario que también consulta por una unidad en otro edificio). Usa un solo login y cambia de vista dentro de la app.
 
 ---
 
@@ -32,14 +32,14 @@ Un mismo usuario puede tener varios roles (por ejemplo, un propietario que tambi
 
 ### 3.1 Huésped
 1. Busca y elige unidad **sin cuenta**: no hay registro previo.
-2. En el checkout ingresa su email y recibe un código de 6 dígitos (vence en 10 minutos).
-3. Al verificarlo se crea la cuenta. El email verificado queda fijo como titular de la reserva y es lo que después le da acceso al contrato.
+2. Al consultar por una unidad ingresa su email y recibe un código de 6 dígitos (vence en 10 minutos).
+3. Al verificarlo se crea la cuenta. El email verificado queda fijo en la consulta: es por donde le responde el anunciante y lo que le da acceso a "Mis consultas".
 4. Alternativa: "Continuar con Google / Apple".
 
 ### 3.2 Propietario
 1. Igual que el huésped (código por email) para crear la cuenta y publicar.
-2. **Verificación de titularidad obligatoria:** la unidad queda oculta para huéspedes hasta que el dueño sube un título o boleto de compraventa y EVP lo valida. Para validarlo, EVP lo cruza con la administración del edificio, que es aliada. Así se evita que alguien publique un departamento ajeno y cobre por él.
-3. **Segundo factor obligatorio** (SMS o app autenticadora) antes de cargar una cuenta de cobro o recibir liquidaciones.
+2. **Verificación de titularidad obligatoria:** la unidad queda oculta y no puede recibir consultas hasta que el dueño sube un título o boleto de compraventa y EVP lo valida. Para validarlo, EVP lo cruza con la administración del edificio, que es aliada. Así se evita que alguien publique un departamento ajeno y pida una seña.
+3. **Segundo factor obligatorio** (SMS o app autenticadora) para agregar o cambiar el teléfono que ven los interesados.
 4. Después, en cada ingreso: código por email + código por SMS, o passkey.
 
 ### 3.3 Personal EVP, inmobiliarias y administraciones
@@ -69,13 +69,13 @@ Un mismo usuario puede tener varios roles (por ejemplo, un propietario que tambi
 
 ### 4.3 Verificación reforzada (step-up) para acciones sensibles
 Aunque la sesión esté abierta, se pide un código nuevo (válido 5 min) para:
-- Cambiar la cuenta de cobro. Además, la nueva cuenta recibe pagos recién **48 h después**, con aviso por email a la dirección registrada.
+- Cambiar el teléfono de contacto de las publicaciones, con aviso por email a la dirección registrada. Es la acción preferida de quien toma una cuenta ajena para estafar a los interesados.
 - Cambiar email o teléfono (código en el valor actual **y** en el nuevo).
 - Ver o descargar documentos de identidad.
 - Eliminar la cuenta.
 
 ### 4.4 Autorización (lo más importante)
-- **Seguridad por fila (RLS) en la base de datos:** cada tabla define quién puede leer y escribir cada registro, por ejemplo `reserva.huesped_id = usuario_actual` y `unidad.propietario_id = usuario_actual`. La regla vive en la base, no en cada pantalla.
+- **Seguridad por fila (RLS) en la base de datos:** cada tabla define quién puede leer y escribir cada registro, por ejemplo `consulta.email_interesado = email_verificado_actual` y `unidad.propietario_id = usuario_actual`. La regla vive en la base, no en cada pantalla.
 - **IDs no adivinables:** UUID o códigos aleatorios. Aun así, nunca alcanza con conocer el ID: siempre se valida la pertenencia.
 - **Recursos ajenos:** responder "no encontrado" (404) y no "prohibido" (403), para no confirmar que el recurso existe.
 - **Redirecciones post-login:** solo se aceptan rutas relativas del propio sitio. Hay que bloquear `//dominio-externo` (open redirect).
@@ -83,21 +83,30 @@ Aunque la sesión esté abierta, se pide un código nuevo (válido 5 min) para:
 ### 4.5 Datos sensibles
 | Dato | Tratamiento |
 |---|---|
-| Tarjetas | EVP **nunca** las recibe ni almacena: tokenización de Stripe / dLocal / EBANX (PCI DSS a cargo del proveedor) |
-| Documento de identidad, firma, título de propiedad | Almacenamiento cifrado separado, acceso con URL firmada que vence en minutos y registro de cada acceso |
-| Cuenta bancaria del propietario | Cifrado a nivel de campo; en pantalla solo los últimos 4 dígitos |
+| Pagos y tarjetas | **No aplica:** EVP no procesa pagos. El alquiler y la seña se acuerdan entre las partes |
+| Documento de identidad, título de propiedad | Almacenamiento cifrado separado, acceso con URL firmada que vence en minutos y registro de cada acceso |
+| Teléfono del propietario | Nunca en el HTML público ni indexable. Se entrega solo por API a un usuario con email verificado que envió una consulta por esa unidad |
+| Datos del interesado en una consulta | Se comparten con el anunciante solo con autorización explícita (casilla obligatoria) |
 | Fotos interiores | Se publican sin metadatos EXIF (ubicación GPS, dispositivo) |
 
 ### 4.6 Protección contra abuso
-- Límite de pedidos por IP y por cuenta en login, envío de códigos y checkout.
+- Límite de pedidos por IP y por cuenta en login, envío de códigos y consultas (máx. 10 consultas por día por cuenta).
 - Captcha invisible (Cloudflare Turnstile o reCAPTCHA v3) en el login y en los formularios públicos.
-- Alertas por email ante ingreso desde un dispositivo o país nuevo, y ante cambios de cuenta de cobro.
+- Alertas por email ante ingreso desde un dispositivo o país nuevo, y ante cambios del teléfono de contacto.
 - Encabezados de seguridad: Content Security Policy estricta, HSTS, `X-Frame-Options: DENY` y `Referrer-Policy`.
 
 ### 4.7 Auditoría
-Registro inalterable de quién vio o modificó qué y cuándo: logins, cambios de cuenta de cobro, accesos a documentos y acciones del personal EVP. Se conserva por 2 años como mínimo.
+Registro inalterable de quién vio o modificó qué y cuándo: logins, cambios del teléfono de contacto, entregas del teléfono a interesados, accesos a documentos y acciones del personal EVP. Se conserva por 2 años como mínimo.
 
 ---
+
+### 4.8 Prevención de fraude de avisos
+Sin pagos en custodia, el riesgo principal es el aviso falso: alguien que publica una unidad ajena, o que toma la cuenta de un dueño real y cambia el teléfono, para cobrar señas. Controles:
+- **Titularidad:** se valida antes de publicar (§3.2).
+- **Teléfono:** solo para interesados verificados (§4.5) y protegido con segundo factor y verificación reforzada (§4.3).
+- **Reportar publicación:** botón en cada unidad. EVP revisa los reportes y puede pausar el aviso.
+- **Consejos de seguridad:** se le muestran al interesado tras consultar. Entre ellos: contrato escrito antes de pagar, pedir el documento del dueño y "EVP nunca cobra alquileres ni señas".
+- **Precios atípicos:** alerta interna si una tarifa queda muy por debajo de la mediana del edificio.
 
 ## 5. Recuperación de cuenta
 - Si pierde el acceso al email: validación por teléfono **y** documento con soporte humano. Nunca solo por SMS, por el riesgo de duplicado de SIM (SIM swapping).
@@ -118,14 +127,14 @@ EVP trata datos de residentes de tres países:
 En la app:
 - Política de privacidad en ES y PT.
 - **Descargar mis datos** (implementado en el prototipo).
-- **Eliminar mi cuenta**, con la excepción de los contratos firmados, que se conservan por el plazo legal.
+- **Eliminar mi cuenta.**
 - Protocolo de notificación de incidentes.
 
 ---
 
 ## 7. Verificación antes del lanzamiento
 1. Pruebas automatizadas de autorización: cada rol intenta leer y modificar datos de otro y el servidor debe rechazarlo. El prototipo incluye la lista de casos en `docs/casos_de_prueba_seguridad.md`.
-2. Prueba de penetración externa enfocada en accesos indebidos (IDOR), sesiones, checkout y carga de archivos.
+2. Prueba de penetración externa enfocada en accesos indebidos (IDOR), sesiones, formulario de consulta, entrega del teléfono del anunciante y carga de archivos.
 3. Revisión de dependencias y secretos en el pipeline de CI.
 4. Simulacro de recuperación de cuenta y de respuesta a incidentes.
 

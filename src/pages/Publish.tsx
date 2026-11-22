@@ -4,8 +4,8 @@ import { Link } from 'react-router'
 import { BuildingVisual } from '../components/units'
 import { Button, ButtonLink, Field, InfoNote, Seal, Stars, Stepper, Toggle, cx } from '../components/ui'
 import { AMENITIES, BUILDINGS, BUILDING_BY_ID, ZONES, ZONE_NAME, type Prices, type Unit } from '../lib/data'
-import { useAuth } from '../lib/auth'
-import { breakdown, usd } from '../lib/format'
+import { maskPhone, useAuth } from '../lib/auth'
+import { usd } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { PERIOD_GROUPS, PERIOD_BY_ID, type PeriodId } from '../lib/periods'
 import { useStore } from '../lib/store'
@@ -30,7 +30,9 @@ async function downscale(file: File, max = 1400): Promise<string> {
 export default function Publish() {
   const { t, lang } = useLang()
   const { publishUnit, allUnits: units } = useStore()
-  const { user, addRole } = useAuth()
+  const { user, addRole, updateUser } = useAuth()
+  const [contactPhone, setContactPhone] = useState(user?.contact?.phone ?? user?.phone ?? '')
+  const [contactWa, setContactWa] = useState(user?.contact?.whatsapp ?? true)
   const fid = useId()
   const [step, setStep] = useState(0)
   const [attempted, setAttempted] = useState(false)
@@ -158,6 +160,8 @@ export default function Publish() {
     }
     publishUnit(unit)
     addRole('owner')
+    // First listing: store the contact interested tenants will see. Later changes go through the panel (2FA + step-up).
+    if (!user?.contact && contactPhone.replace(/\D/g, '').length >= 8) updateUser({ contact: { phone: contactPhone.trim(), whatsapp: contactWa } })
     setPublished(unit)
     window.scrollTo({ top: 0 })
   }
@@ -344,7 +348,7 @@ export default function Publish() {
                               placeholder="—"
                             />
                           </span>
-                          <span className="f-num text-[0.75rem] text-mute">{n ? t(`Huésped paga ${usd(breakdown(n).total, lang)}`, `Hóspede paga ${usd(breakdown(n).total, lang)}`) : t('No se ofrece', 'Não oferecido')}</span>
+                          <span className="f-num text-[0.75rem] text-mute">{n ? t('Se publica así, sin cargos agregados', 'Publicado assim, sem taxas adicionais') : t('No se ofrece', 'Não oferecido')}</span>
                         </label>
                       )
                     })}
@@ -431,6 +435,7 @@ export default function Publish() {
           )}
 
           {step === 5 && b && (
+            <div className="flex flex-col gap-6">
             <dl className="flex flex-col divide-y divide-line rounded-[18px] ring-1 ring-line">
               {[
                 [t('Edificio', 'Edifício'), `${b.name} · ${ZONE_NAME[b.zone]}`, 0],
@@ -448,6 +453,26 @@ export default function Publish() {
                 </div>
               ))}
             </dl>
+            <section className="flex flex-col gap-4 rounded-[18px] bg-mist p-5" aria-labelledby="contact-pub">
+              <h2 id="contact-pub" className="font-semibold">{t('¿Cómo te contactan los interesados?', 'Como os interessados entram em contato?')}</h2>
+              {user?.contact ? (
+                <p className="text-[0.9375rem]">
+                  {t(`Por email y al ${maskPhone(user.contact.phone)}${user.contact.whatsapp ? ' (WhatsApp)' : ''}. Podés cambiarlo desde tu panel.`, `Por e-mail e no ${maskPhone(user.contact.phone)}${user.contact.whatsapp ? ' (WhatsApp)' : ''}. Você pode alterar no seu painel.`)}
+                </p>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+                  <Field label={t('Teléfono / WhatsApp', 'Telefone / WhatsApp')} htmlFor={`${fid}-cp`} optional hint={t('Si lo dejás vacío, las consultas te llegan solo por email.', 'Se deixar vazio, as consultas chegam só por e-mail.')}>
+                    <input id={`${fid}-cp`} type="tel" inputMode="tel" autoComplete="tel" className="field f-num" placeholder="+598 99 123 456" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+                  </Field>
+                  <label className="flex min-h-12 items-center gap-2 text-[0.9375rem]">
+                    <input type="checkbox" className="size-4 accent-[var(--color-ink)]" checked={contactWa} onChange={(e) => setContactWa(e.target.checked)} />
+                    WhatsApp
+                  </label>
+                </div>
+              )}
+              <p className="text-[0.8125rem] text-mute">{t('Tu teléfono no es público: solo lo ven personas con email verificado después de enviarte una consulta.', 'Seu telefone não é público: só é visível para pessoas com e-mail verificado depois de enviarem uma consulta.')}</p>
+            </section>
+            </div>
           )}
 
           <div className="flex flex-col-reverse gap-3 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
@@ -466,9 +491,9 @@ export default function Publish() {
 
         <aside className="flex flex-col gap-5 lg:sticky lg:top-28 lg:self-start">
           <div className="rounded-[22px] bg-ink p-6 text-on-ink on-ink">
-            <p className="f-h3 text-[1.125rem]">{t('Primer año: 0% de comisión', 'Primeiro ano: 0% de comissão')}</p>
+            <p className="f-h3 text-[1.125rem]">{t('Publicar es gratis el primer año', 'Anunciar é grátis no primeiro ano')}</p>
             <p className="mt-2 text-[0.9375rem] text-on-ink-mute">
-              {t('Cobrás el 100% de tu tarifa neta. El huésped paga aparte una tarifa de gestión del 5%.', 'Você recebe 100% da sua tarifa líquida. O hóspede paga à parte uma taxa de gestão de 5%.')}
+              {t('Sin comisiones: los interesados te consultan directo y el alquiler lo cerrás vos.', 'Sem comissões: os interessados consultam você direto e o aluguel é fechado por você.')}
             </p>
           </div>
           <ul className="flex flex-col gap-3 px-1 text-[0.9375rem]">

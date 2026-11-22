@@ -1,85 +1,82 @@
-import { Bank, FileArrowUp, Plus, ShieldWarning } from '@phosphor-icons/react'
+import { ChatCircleText, Envelope, FileArrowUp, Phone, Plus, ShieldWarning, WhatsappLogo } from '@phosphor-icons/react'
 import { useId, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { StepUpDialog } from '../components/auth-ui'
 import { UnitVisual } from '../components/units'
 import { Button, ButtonLink, Field, InfoNote, cx } from '../components/ui'
-import { useAuth } from '../lib/auth'
+import { maskPhone, useAuth } from '../lib/auth'
 import { BUILDING_BY_ID, ZONE_NAME } from '../lib/data'
-import { dateTime, usd } from '../lib/format'
+import { dateTime, longDate, usd } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { isAvailable, PERIODS, PERIOD_BY_ID } from '../lib/periods'
-import { bookingStatus, useStore, type BookingStatus } from '../lib/store'
+import { useStore, type InquiryStatus } from '../lib/store'
 
-function PayoutAccount() {
+/** Phone/WhatsApp that verified interested tenants see. Changing it is a sensitive action (anti-fraud). */
+function ListingContact() {
   const { t, lang } = useLang()
   const { user, updateUser, stepUpFresh, notify } = useAuth()
   const fid = useId()
   const [editing, setEditing] = useState(false)
-  const [bank, setBank] = useState('BROU')
-  const [account, setAccount] = useState('')
+  const [phone, setPhone] = useState('')
+  const [whatsapp, setWhatsapp] = useState(true)
   const [error, setError] = useState('')
   const [stepUp, setStepUp] = useState(false)
   if (!user) return null
   const apply = () => {
-    const digits = account.replace(/\D/g, '')
-    const holdUntil = new Date(Date.now() + 48 * 3_600_000).toISOString()
-    updateUser({ payout: { bank, masked: `•••• ${digits.slice(-4)}`, holdUntil } })
-    notify(user.email, t('Cambiaste tu cuenta de cobro. Si no fuiste vos, contactá a EVP de inmediato.', 'Você alterou sua conta de recebimento. Se não foi você, contate a EVP imediatamente.'))
+    updateUser({ contact: { phone: phone.trim(), whatsapp, changedAt: new Date().toISOString() } })
+    notify(user.email, t('Cambiaste el teléfono que ven los interesados. Si no fuiste vos, avisá a EVP de inmediato.', 'Você alterou o telefone que os interessados veem. Se não foi você, avise a EVP imediatamente.'))
     setEditing(false)
-    setAccount('')
+    setPhone('')
   }
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    if (account.replace(/\D/g, '').length < 6) return setError(t('Revisá el número de cuenta.', 'Confira o número da conta.'))
+    if (phone.replace(/\D/g, '').length < 8) return setError(t('Incluí el código de país, por ejemplo +598 99…', 'Inclua o código do país, por exemplo +55 11…'))
     setError('')
-    // Sensitive action: requires a fresh second-factor check even with an open session.
+    // A swapped contact is how listing fraud starts: require a fresh second factor even with an open session.
     if (stepUpFresh()) apply()
     else setStepUp(true)
   }
-  const hold = user.payout?.holdUntil && Date.parse(user.payout.holdUntil) > Date.now()
   return (
-    <section aria-labelledby="payout-title" className="flex flex-col gap-5 rounded-[20px] p-5 ring-1 ring-line md:p-6">
+    <section aria-labelledby="contact-title" className="flex flex-col gap-5 rounded-[20px] p-5 ring-1 ring-line md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Bank size={22} className="text-marine-strong" />
-          <h2 id="payout-title" className="f-h3 text-[1.125rem]">{t('Cuenta para liquidaciones', 'Conta para repasses')}</h2>
+          <Phone size={22} className="text-marine-strong" />
+          <h2 id="contact-title" className="f-h3 text-[1.125rem]">{t('Contacto para interesados', 'Contato para interessados')}</h2>
         </div>
         {!editing && (
           <Button variant="outline" size="sm" onClick={() => setEditing(true)} disabled={!user.mfa}>
-            {user.payout ? t('Cambiar cuenta', 'Alterar conta') : t('Agregar cuenta', 'Adicionar conta')}
+            {user.contact ? t('Cambiar', 'Alterar') : t('Agregar', 'Adicionar')}
           </Button>
         )}
       </div>
-      {user.payout ? (
+      {user.contact ? (
         <p className="f-num text-[0.9375rem]">
-          {user.payout.bank} · {user.payout.masked}
-          {hold && <span className="ml-2 rounded-full bg-warn-soft px-2.5 py-1 text-[0.75rem] font-medium text-[oklch(0.45_0.11_70)]">{t(`Habilitada desde ${dateTime(user.payout.holdUntil!, lang)}`, `Habilitada a partir de ${dateTime(user.payout.holdUntil!, lang)}`)}</span>}
+          {maskPhone(user.contact.phone)} · {user.contact.whatsapp ? t('acepta WhatsApp', 'aceita WhatsApp') : t('solo llamadas', 'só ligações')}
+          {user.contact.changedAt && <span className="ml-2 text-[0.8125rem] text-mute">{t(`Actualizado el ${longDate(user.contact.changedAt, lang)}`, `Atualizado em ${longDate(user.contact.changedAt, lang)}`)}</span>}
         </p>
       ) : (
-        <p className="text-[0.9375rem] text-mute">{t('Todavía no cargaste una cuenta.', 'Você ainda não cadastrou uma conta.')}</p>
+        <p className="text-[0.9375rem] text-mute">{t('Sin teléfono: las consultas te llegan solo por email.', 'Sem telefone: as consultas chegam só por e-mail.')}</p>
       )}
-      {!user.mfa && <p className="text-[0.8125rem] text-mute">{t('Para cargar o cambiar la cuenta, activá antes la verificación en dos pasos.', 'Para cadastrar ou alterar a conta, ative antes a verificação em duas etapas.')}</p>}
+      <p className="text-[0.8125rem] text-mute">
+        {t('No es público: solo lo ven personas con email verificado después de enviarte una consulta.', 'Não é público: só é visível para pessoas com e-mail verificado depois de enviarem uma consulta.')}
+      </p>
+      {!user.mfa && <p className="text-[0.8125rem] text-mute">{t('Para agregarlo o cambiarlo, activá antes la verificación en dos pasos.', 'Para adicionar ou alterar, ative antes a verificação em duas etapas.')}</p>}
       {editing && (
-        <form onSubmit={submit} noValidate className="grid gap-4 sm:grid-cols-[10rem_1fr_auto] sm:items-end">
-          <Field label={t('Banco', 'Banco')} htmlFor={`${fid}-b`}>
-            <select id={`${fid}-b`} className="field" value={bank} onChange={(e) => setBank(e.target.value)}>
-              {['BROU', 'Itaú', 'Santander', 'BBVA', 'Scotiabank', 'HSBC', t('Banco del exterior', 'Banco no exterior')].map((b) => <option key={b}>{b}</option>)}
-            </select>
+        <form onSubmit={submit} noValidate className="grid gap-4 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+          <Field label={t('Teléfono / WhatsApp', 'Telefone / WhatsApp')} htmlFor={`${fid}-p`} error={error || undefined}>
+            <input id={`${fid}-p`} type="tel" inputMode="tel" autoComplete="tel" className="field f-num" placeholder="+598 99 123 456" value={phone} onChange={(e) => setPhone(e.target.value)} aria-invalid={!!error || undefined} />
           </Field>
-          <Field label={t('Número de cuenta en USD', 'Número da conta em USD')} htmlFor={`${fid}-a`} error={error || undefined}>
-            <input id={`${fid}-a`} className="field f-num" inputMode="numeric" autoComplete="off" value={account} onChange={(e) => setAccount(e.target.value)} aria-invalid={!!error || undefined} />
-          </Field>
+          <label className="flex min-h-12 items-center gap-2 text-[0.9375rem]">
+            <input type="checkbox" className="size-4 accent-[var(--color-ink)]" checked={whatsapp} onChange={(e) => setWhatsapp(e.target.checked)} />
+            WhatsApp
+          </label>
           <div className="flex gap-2">
             <Button type="submit" variant="ink">{t('Guardar', 'Salvar')}</Button>
             <Button type="button" variant="ghost" onClick={() => setEditing(false)}>{t('Cancelar', 'Cancelar')}</Button>
           </div>
-          <p className="text-[0.8125rem] text-mute sm:col-span-3">
-            {t('Por seguridad, te pedimos un código y la nueva cuenta recibe pagos recién 48 h después del cambio. Te avisamos por email.', 'Por segurança, pedimos um código e a nova conta só recebe pagamentos 48 h após a alteração. Avisamos por e-mail.')}
-          </p>
         </form>
       )}
-      <StepUpDialog open={stepUp} onClose={() => setStepUp(false)} onVerified={apply} reason={t('Vas a cambiar la cuenta donde EVP te transfiere los alquileres.', 'Você vai alterar a conta onde a EVP transfere os aluguéis.')} />
+      <StepUpDialog open={stepUp} onClose={() => setStepUp(false)} onVerified={apply} reason={t('Vas a cambiar el teléfono que ven quienes consultan por tus unidades.', 'Você vai alterar o telefone que veem as pessoas que consultam suas unidades.')} />
     </section>
   )
 }
@@ -100,7 +97,7 @@ function TitleVerification({ unitId, state, doc }: { unitId: string; state: 'tit
   }
   return (
     <div className="flex flex-col gap-3 rounded-[12px] bg-ocaso-soft p-4 text-[0.875rem] sm:flex-row sm:items-center sm:justify-between">
-      <span>{t('Falta el documento de titularidad (título o boleto de compraventa). Hasta validarlo, los huéspedes no ven la unidad.', 'Falta o documento de titularidade (escritura ou compromisso de compra e venda). Até a validação, os hóspedes não veem a unidade.')}</span>
+      <span>{t('Falta el documento de titularidad (título o boleto de compraventa). Hasta validarlo, los interesados no ven la unidad.', 'Falta o documento de titularidade (escritura ou compromisso de compra e venda). Até a validação, os interessados não veem a unidade.')}</span>
       <label htmlFor={`${fid}-f`} className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start rounded-full bg-ink px-4 font-medium text-on-ink has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-marine-strong sm:self-auto">
         <FileArrowUp size={16} />
         {t('Subir documento', 'Enviar documento')}
@@ -112,29 +109,26 @@ function TitleVerification({ unitId, state, doc }: { unitId: string; state: 'tit
 
 export default function Panel() {
   const { t, lang } = useLang()
-  const { allUnits, bookings, completeCheckin, releaseNow } = useStore()
-  const { user } = useAuth()
-  // Authorization: an owner only ever sees their own units and the bookings on them.
+  const { allUnits, inquiries, setInquiryStatus, toggleRented } = useStore()
+  const { user, notify } = useAuth()
+  const [filter, setFilter] = useState<'nuevas' | 'todas'>('nuevas')
+  // Authorization: an owner only ever sees their own units and the inquiries about them.
   const mine = allUnits.filter((u) => u.ownerId === user?.id)
-  const myBookings = bookings.filter((b) => mine.some((u) => u.id === b.unitId))
-  const sum = (s: BookingStatus[]) => myBookings.filter((b) => s.includes(bookingStatus(b))).reduce((a, b) => a + b.net, 0)
-  const nextRelease = myBookings
-    .filter((b) => bookingStatus(b) === 'checkin' && b.releaseAt)
-    .sort((a, b) => a.releaseAt!.localeCompare(b.releaseAt!))[0]
+  const myInquiries = inquiries.filter((q) => mine.some((u) => u.id === q.unitId))
+  const fresh = myInquiries.filter((q) => q.status === 'nueva')
+  const shown = filter === 'nuevas' ? fresh : myInquiries
   const offered = mine.reduce((a, u) => a + PERIODS.filter((p) => p.kind === 'quincena' && u.prices[p.id] !== undefined).length, 0)
-  const bookedQ = mine.reduce((a, u) => a + PERIODS.filter((p) => p.kind === 'quincena' && u.prices[p.id] !== undefined && !isAvailable(p.id, u.booked)).length, 0)
+  const rentedQ = mine.reduce((a, u) => a + PERIODS.filter((p) => p.kind === 'quincena' && u.prices[p.id] !== undefined && !isAvailable(p.id, u.booked)).length, 0)
+  const freeUntil = user ? new Date(Date.parse(user.createdAt) + 365 * 86_400_000).toISOString() : ''
 
-  const statusLabel: Record<BookingStatus, string> = {
-    custodia: t('En custodia', 'Em custódia'),
-    checkin: t('Check-in hecho · liberación programada', 'Check-in feito · liberação programada'),
-    liberado: t('Transferido', 'Transferido'),
-  }
-  const statusTone: Record<BookingStatus, string> = {
-    custodia: 'bg-marine-soft text-marine-strong',
-    checkin: 'bg-warn-soft text-[oklch(0.45_0.11_70)]',
-    liberado: 'bg-ok-soft text-ok',
+  const statusLabel: Record<InquiryStatus, [string, string]> = {
+    nueva: [t('Nueva', 'Nova'), 'bg-marine-soft text-marine-strong'],
+    respondida: [t('Respondida', 'Respondida'), 'bg-warn-soft text-[oklch(0.45_0.11_70)]'],
+    alquilado: [t('Alquilado', 'Alugado'), 'bg-ok-soft text-ok'],
+    descartada: [t('Descartada', 'Descartada'), 'bg-mist text-mute'],
   }
   const quincenas = PERIODS.filter((p) => p.id !== 'temporada')
+  const demo = (what: string) => notify(user?.email ?? '', t(`Demo: en la versión final esto ${what}.`, `Demo: na versão final isto ${what}.`))
 
   return (
     <div className="pt-28 pb-24 md:pt-32">
@@ -143,7 +137,8 @@ export default function Panel() {
           <div className="flex flex-col gap-2">
             <p className="text-mute">{t('Panel del propietario', 'Painel do proprietário')}</p>
             <h1 className="f-h2 text-[clamp(2rem,4vw,3.25rem)]">
-              {t('Hola', 'Olá')}{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
+              {t('Hola', 'Olá')}
+              {user?.name ? `, ${user.name.split(' ')[0]}` : ''}
             </h1>
           </div>
           <ButtonLink to="/propietarios/publicar" variant="ink" trailing={<Plus size={16} />}>
@@ -157,7 +152,10 @@ export default function Panel() {
               <ShieldWarning size={22} className="mt-0.5 shrink-0 text-ocaso-strong" />
               <span>
                 <strong>{t('Activá la verificación en dos pasos.', 'Ative a verificação em duas etapas.')}</strong>{' '}
-                {t('Es obligatoria para propietarios: protege tus cobros si alguien accede a tu email.', 'É obrigatória para proprietários: protege seus recebimentos se alguém acessar seu e-mail.')}
+                {t(
+                  'Es obligatoria para propietarios: evita que alguien que acceda a tu email cambie tu teléfono y engañe a los interesados.',
+                  'É obrigatória para proprietários: evita que alguém que acesse seu e-mail troque seu telefone e engane os interessados.',
+                )}
               </span>
             </p>
             <ButtonLink to="/cuenta#seguridad" variant="ink" size="sm" className="shrink-0">
@@ -168,10 +166,10 @@ export default function Panel() {
 
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[18px] bg-line ring-1 ring-line lg:grid-cols-4">
           {[
-            [t('En custodia', 'Em custódia'), usd(sum(['custodia', 'checkin']), lang), t('Se libera 24–48 h después de cada check-in', 'Liberado 24–48 h após cada check-in')],
-            [t('Transferido', 'Transferido'), usd(sum(['liberado']), lang), t('100% neto · año 1 sin comisión', '100% líquido · ano 1 sem comissão')],
-            [t('Próxima liberación', 'Próxima liberação'), nextRelease ? dateTime(nextRelease.releaseAt!, lang) : '—', nextRelease ? nextRelease.code : t('Sin check-ins pendientes de liquidar', 'Sem check-ins a liquidar')],
-            [t('Quincenas reservadas', 'Quinzenas reservadas'), `${bookedQ} / ${offered}`, t('Temporada 2026 – 27', 'Temporada 2026 – 27')],
+            [t('Consultas nuevas', 'Consultas novas'), String(fresh.length), t('Respondé rápido: es lo que más convierte', 'Responda rápido: é o que mais converte')],
+            [t('Consultas recibidas', 'Consultas recebidas'), String(myInquiries.length), t('Temporada 2026 – 27', 'Temporada 2026 – 27')],
+            [t('Quincenas alquiladas', 'Quinzenas alugadas'), `${rentedQ} / ${offered}`, t('Las marcás vos en cada unidad', 'Você marca em cada unidade')],
+            [t('Tu plan', 'Seu plano'), t('Gratis', 'Grátis'), t(`Primer año, hasta el ${longDate(freeUntil, lang)}`, `Primeiro ano, até ${longDate(freeUntil, lang)}`)],
           ].map(([k, v, s]) => (
             <div key={k} className="flex flex-col gap-1 bg-bg p-5 md:p-6">
               <dt className="text-[0.8125rem] text-mute">{k}</dt>
@@ -181,10 +179,87 @@ export default function Panel() {
           ))}
         </dl>
 
+        <section aria-labelledby="inq-title" className="flex flex-col gap-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h2 id="inq-title" className="f-h3 text-[1.375rem]">
+              {t('Consultas', 'Consultas')}
+            </h2>
+            <div className="flex rounded-full bg-mist p-1" role="group" aria-label={t('Filtrar consultas', 'Filtrar consultas')}>
+              {(
+                [
+                  ['nuevas', t(`Nuevas (${fresh.length})`, `Novas (${fresh.length})`)],
+                  ['todas', t(`Todas (${myInquiries.length})`, `Todas (${myInquiries.length})`)],
+                ] as const
+              ).map(([v, l]) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-pressed={filter === v}
+                  onClick={() => setFilter(v)}
+                  className={cx('min-h-9 rounded-full px-4 text-[0.8125rem] font-medium transition-colors', filter === v ? 'bg-bg shadow-[var(--shadow-float)]' : 'text-mute hover:text-ink')}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+          {shown.length ? (
+            <ul className="flex flex-col gap-4">
+              {shown.map((q) => {
+                const u = mine.find((x) => x.id === q.unitId)!
+                const [label, tone] = statusLabel[q.status]
+                return (
+                  <li key={q.id} className="flex flex-col gap-4 rounded-[20px] p-5 ring-1 ring-line md:p-6">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex flex-col gap-0.5">
+                        <p className="font-semibold">
+                          {q.guest.name} <span className="font-normal text-mute">· {q.guest.country} · {q.guest.guests} {t('personas', 'pessoas')}{q.guest.pet ? t(' · con mascota', ' · com animal') : ''}</span>
+                        </p>
+                        <p className="text-[0.875rem] text-mute">
+                          {BUILDING_BY_ID[u.buildingId].name} · {u.unit} · {q.period ? `${PERIOD_BY_ID[q.period].name[lang]} (${usd(u.prices[q.period] ?? 0, lang)})` : t('sin período definido', 'sem período definido')} · {dateTime(q.createdAt, lang)}
+                        </p>
+                      </div>
+                      <span className={cx('rounded-full px-2.5 py-1 text-[0.75rem] font-medium', tone)}>{label}</span>
+                    </div>
+                    <p className="prose-evp text-[0.9375rem]">“{q.message}”</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button size="sm" variant="ink" trailing={<WhatsappLogo size={14} />} onClick={() => { demo(t(`abre WhatsApp con ${q.guest.phone}`, `abre o WhatsApp com ${q.guest.phone}`)); if (q.status === 'nueva') setInquiryStatus(q.id, 'respondida') }}>
+                        WhatsApp
+                      </Button>
+                      <Button size="sm" variant="outline" trailing={<Envelope size={14} />} onClick={() => { demo(t(`abre tu email para responder a ${q.guest.email}`, `abre seu e-mail para responder a ${q.guest.email}`)); if (q.status === 'nueva') setInquiryStatus(q.id, 'respondida') }}>
+                        Email
+                      </Button>
+                      <span className="mx-1 hidden h-6 w-px bg-line sm:block" aria-hidden />
+                      {q.status !== 'alquilado' && q.period && isAvailable(q.period, u.booked) && (
+                        <Button size="sm" variant="ghost" onClick={() => setInquiryStatus(q.id, 'alquilado')}>
+                          {t('Se lo alquilé', 'Aluguei para essa pessoa')}
+                        </Button>
+                      )}
+                      {q.status !== 'descartada' && q.status !== 'alquilado' && (
+                        <Button size="sm" variant="ghost" onClick={() => setInquiryStatus(q.id, 'descartada')}>
+                          {t('Descartar', 'Descartar')}
+                        </Button>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <p className="flex items-center gap-3 rounded-[16px] bg-mist p-5 text-mute">
+              <ChatCircleText size={20} />
+              {filter === 'nuevas' ? t('No tenés consultas nuevas.', 'Você não tem consultas novas.') : t('Todavía no recibiste consultas. Cuando lleguen, las vas a ver acá y en tu email.', 'Você ainda não recebeu consultas. Quando chegarem, você as verá aqui e no seu e-mail.')}
+            </p>
+          )}
+        </section>
+
         <section aria-labelledby="mine-title" className="flex flex-col gap-6">
-          <h2 id="mine-title" className="f-h3 text-[1.375rem]">
-            {t('Mis unidades', 'Minhas unidades')}
-          </h2>
+          <div className="flex flex-col gap-1">
+            <h2 id="mine-title" className="f-h3 text-[1.375rem]">
+              {t('Mis unidades y disponibilidad', 'Minhas unidades e disponibilidade')}
+            </h2>
+            <p className="text-[0.9375rem] text-mute">{t('Tocá un período para marcarlo como alquilado o volver a ofrecerlo.', 'Toque um período para marcá-lo como alugado ou voltar a oferecê-lo.')}</p>
+          </div>
           <ul className="flex flex-col gap-4">
             {mine.map((u) => {
               const b = BUILDING_BY_ID[u.buildingId]
@@ -210,23 +285,31 @@ export default function Panel() {
                       </span>
                     </div>
                     {u.verification && <TitleVerification unitId={u.id} state={u.verification} doc={u.titleDoc?.name} />}
-                    <ul className="grid grid-cols-4 gap-1.5 sm:grid-cols-7" aria-label={t('Ocupación por período', 'Ocupação por período')}>
+                    <ul className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 xl:grid-cols-7" aria-label={t('Disponibilidad por período', 'Disponibilidade por período')}>
                       {quincenas.map((p) => {
                         const price = u.prices[p.id]
-                        const free = isAvailable(p.id, u.booked)
-                        const state = price === undefined ? 'off' : free ? 'free' : 'booked'
+                        const marked = u.booked.includes(p.id)
+                        const blocked = !marked && !isAvailable(p.id, u.booked)
+                        const state = price === undefined ? 'off' : marked ? 'rented' : blocked ? 'blocked' : 'free'
                         return (
-                          <li
-                            key={p.id}
-                            className={cx(
-                              'flex flex-col rounded-[10px] px-2.5 py-2 text-[0.75rem]',
-                              state === 'booked' && 'bg-ink text-on-ink',
-                              state === 'free' && 'bg-bg ring-1 ring-line-strong ring-inset',
-                              state === 'off' && 'bg-mist text-mute',
-                            )}
-                          >
-                            <span className="font-semibold">{p.short[lang]}</span>
-                            <span className="f-num opacity-80">{state === 'booked' ? t('Reservado', 'Reservado') : state === 'free' ? usd(price!, lang) : t('Uso propio', 'Uso próprio')}</span>
+                          <li key={p.id}>
+                            <button
+                              type="button"
+                              disabled={state === 'off' || state === 'blocked'}
+                              aria-pressed={state === 'rented'}
+                              onClick={() => toggleRented(u.id, p.id)}
+                              title={state === 'blocked' ? t('Incluido en otro período alquilado', 'Incluído em outro período alugado') : undefined}
+                              className={cx(
+                                'flex w-full flex-col items-start rounded-[10px] px-2.5 py-2 text-left text-[0.75rem] transition-colors duration-200',
+                                state === 'rented' && 'bg-ink text-on-ink hover:bg-ink-2',
+                                state === 'blocked' && 'bg-ink/70 text-on-ink',
+                                state === 'free' && 'bg-bg ring-1 ring-line-strong ring-inset hover:ring-mute',
+                                state === 'off' && 'bg-mist text-mute',
+                              )}
+                            >
+                              <span className="font-semibold">{p.short[lang]}</span>
+                              <span className="f-num opacity-80">{state === 'rented' || state === 'blocked' ? t('Alquilado', 'Alugado') : state === 'free' ? usd(price!, lang) : t('Uso propio', 'Uso próprio')}</span>
+                            </button>
                           </li>
                         )
                       })}
@@ -238,76 +321,14 @@ export default function Panel() {
           </ul>
         </section>
 
-        <PayoutAccount />
+        <ListingContact />
 
-        <section aria-labelledby="bk-title" className="flex flex-col gap-6">
-          <h2 id="bk-title" className="f-h3 text-[1.375rem]">
-            {t('Reservas y liquidaciones', 'Reservas e repasses')}
-          </h2>
-          {myBookings.length ? (
-            <div className="relative overflow-x-auto rounded-[18px] ring-1 ring-line">
-              <table className="w-full min-w-[46rem] text-left text-[0.9375rem]">
-                <thead className="bg-mist text-[0.8125rem] text-mute">
-                  <tr>
-                    <th scope="col" className="px-5 py-3 font-medium">{t('Reserva', 'Reserva')}</th>
-                    <th scope="col" className="px-5 py-3 font-medium">{t('Unidad y período', 'Unidade e período')}</th>
-                    <th scope="col" className="px-5 py-3 font-medium">{t('Huésped', 'Hóspede')}</th>
-                    <th scope="col" className="px-5 py-3 text-right font-medium">{t('Tu neto', 'Seu líquido')}</th>
-                    <th scope="col" className="px-5 py-3 font-medium">{t('Estado', 'Status')}</th>
-                    <th scope="col" className="px-5 py-3 font-medium"><span className="sr-only">{t('Acciones', 'Ações')}</span></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {myBookings.map((bk) => {
-                    const u = allUnits.find((x) => x.id === bk.unitId)!
-                    const st = bookingStatus(bk)
-                    const [first, ...rest] = bk.guest.name.split(' ')
-                    return (
-                      <tr key={bk.code} className="border-t border-line align-top">
-                        <td className="f-num px-5 py-4 font-medium">{bk.code}</td>
-                        <td className="px-5 py-4">
-                          {BUILDING_BY_ID[u.buildingId].name} · {u.unit}
-                          <span className="block text-[0.8125rem] text-mute">{PERIOD_BY_ID[bk.period].name[lang]}</span>
-                        </td>
-                        <td className="px-5 py-4">
-                          {first} {rest.length ? `${rest[rest.length - 1][0]}.` : ''}
-                          <span className="block text-[0.8125rem] text-mute">
-                            {bk.guest.guests} {t('huéspedes', 'hóspedes')} · {bk.guest.country}
-                          </span>
-                        </td>
-                        <td className="f-num px-5 py-4 text-right font-semibold">{usd(bk.net, lang)}</td>
-                        <td className="px-5 py-4">
-                          <span className={cx('inline-block rounded-full px-2.5 py-1 text-[0.75rem] font-medium', statusTone[st])}>{statusLabel[st]}</span>
-                          {st === 'checkin' && bk.releaseAt && <span className="f-num mt-1 block text-[0.75rem] text-mute">{dateTime(bk.releaseAt, lang)}</span>}
-                        </td>
-                        <td className="px-5 py-4 text-right">
-                          {st === 'custodia' && (
-                            <button type="button" onClick={() => completeCheckin(bk.code, '')} className="text-[0.8125rem] font-medium whitespace-nowrap text-marine-strong underline-offset-4 hover:underline">
-                              {t('Simular check-in', 'Simular check-in')}
-                            </button>
-                          )}
-                          {st === 'checkin' && (
-                            <button type="button" onClick={() => releaseNow(bk.code)} className="text-[0.8125rem] font-medium whitespace-nowrap text-marine-strong underline-offset-4 hover:underline">
-                              {t('Simular liberación', 'Simular liberação')}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-mute">{t('Todavía no tenés reservas. Cuando entren, vas a ver acá el estado de cada pago.', 'Você ainda não tem reservas. Quando chegarem, verá aqui o status de cada pagamento.')}</p>
+        <InfoNote>
+          {t(
+            'EVP no intermedia ni cobra comisión: el contrato, la seña y el pago los acordás directamente con el inquilino. Te recomendamos un contrato de arrendamiento de temporada por escrito.',
+            'A EVP não intermedeia nem cobra comissão: o contrato, o sinal e o pagamento são acertados diretamente com o inquilino. Recomendamos um contrato de locação por temporada por escrito.',
           )}
-          <InfoNote>
-            {t(
-              'Los botones «Simular» existen solo en esta demo: en producción, el check-in lo confirma el huésped con el inventario digital y la liberación es automática.',
-              'Os botões «Simular» existem só nesta demo: em produção, o check-in é confirmado pelo hóspede com o inventário digital e a liberação é automática.',
-            )}
-          </InfoNote>
-        </section>
+        </InfoNote>
       </div>
     </div>
   )

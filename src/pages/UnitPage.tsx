@@ -1,17 +1,69 @@
-import { ArrowLeft, Check, FileText, ShieldCheck, ClipboardText, CalendarBlank } from '@phosphor-icons/react'
-import { useRef } from 'react'
+import { ArrowLeft, Check, Handshake, ChatCircleText, ShieldCheck, CalendarBlank, Flag } from '@phosphor-icons/react'
+import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { FloorPlan } from '../components/FloorPlan'
 import { ArchScene } from '../components/ArchScene'
-import { Features, FavoriteButton, PeriodSelector, PriceBreakdown, Specs, UnitVisual } from '../components/units'
+import { Features, FavoriteButton, PeriodSelector, PeriodPrice, Specs, UnitVisual } from '../components/units'
 import { Button, ChannelTag, InfoNote, Seal, Stars, cx } from '../components/ui'
 import { AMENITIES, BUILDING_BY_ID, ZONE_NAME } from '../lib/data'
-import { breakdown, minPrice, usd } from '../lib/format'
+import { minPrice, usd } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { isAvailable, isPeriodId, PERIOD_BY_ID, type PeriodId } from '../lib/periods'
 import { useStore } from '../lib/store'
 import { useAuth } from '../lib/auth'
 import NotFound from './NotFound'
+
+const REPORT_REASONS = [
+  { id: 'no-titular', es: 'Creo que quien publica no es el dueño', pt: 'Acho que quem anuncia não é o dono' },
+  { id: 'sena', es: 'Me pidieron una seña por un medio extraño', pt: 'Pediram um sinal por um meio estranho' },
+  { id: 'datos', es: 'Los datos o las fotos no son reales', pt: 'Os dados ou as fotos não são reais' },
+  { id: 'otro', es: 'Otro motivo', pt: 'Outro motivo' },
+]
+
+function ReportListing({ unitId }: { unitId: string }) {
+  const { t, lang } = useLang()
+  const { reportListing } = useStore()
+  const [reason, setReason] = useState(REPORT_REASONS[0].id)
+  const [sent, setSent] = useState(false)
+  return (
+    <details className="group rounded-[16px] ring-1 ring-line">
+      <summary className="flex min-h-12 items-center gap-2 px-5 py-3 text-[0.875rem] text-mute [&::-webkit-details-marker]:hidden">
+        <Flag size={16} />
+        {t('Reportar esta publicación', 'Denunciar este anúncio')}
+      </summary>
+      <div className="px-5 pb-5">
+        {sent ? (
+          <p className="text-[0.875rem]" role="status">
+            {t('Gracias. EVP revisa cada reporte y, si corresponde, pausa la publicación.', 'Obrigado. A EVP revisa cada denúncia e, se for o caso, pausa o anúncio.')}
+          </p>
+        ) : (
+          <form
+            className="flex flex-col gap-3 sm:flex-row sm:items-end"
+            onSubmit={(e) => {
+              e.preventDefault()
+              reportListing(unitId, reason)
+              setSent(true)
+            }}
+          >
+            <label className="flex flex-1 flex-col gap-1.5 text-[0.8125rem] font-medium">
+              {t('Motivo', 'Motivo')}
+              <select className="field" value={reason} onChange={(e) => setReason(e.target.value)}>
+                {REPORT_REASONS.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r[lang]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Button type="submit" variant="outline" size="sm">
+              {t('Enviar reporte', 'Enviar denúncia')}
+            </Button>
+          </form>
+        )}
+      </div>
+    </details>
+  )
+}
 
 export default function UnitPage() {
   const { id = '' } = useParams()
@@ -19,7 +71,6 @@ export default function UnitPage() {
   const { unitById } = useStore()
   const nav = useNavigate()
   const [sp, setSp] = useSearchParams()
-  const selectorRef = useRef<HTMLDivElement>(null)
   const { user } = useAuth()
   const u = unitById(id)
   // Unverified units exist only for their owner (preview); guests get a plain 404.
@@ -33,15 +84,9 @@ export default function UnitPage() {
     else q.delete('periodo')
     setSp(q, { replace: true, preventScrollReset: true })
   }
-  const net = period ? u.prices[period]! : 0
-  const reserve = () => {
-    if (!period) {
-      selectorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      selectorRef.current?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus({ preventScroll: true })
-      return
-    }
-    nav(`/reservar/${u.id}?periodo=${period}`)
-  }
+  const price = period ? u.prices[period]! : 0
+  // Direct inquiry to the advertiser. A period is optional: "¿está disponible?" is a valid question.
+  const inquire = () => nav(`/consultar/${u.id}${period ? `?periodo=${period}` : ''}`)
   const photoCount = u.photos?.length ?? 0
 
   const description = t(
@@ -151,9 +196,9 @@ export default function UnitPage() {
               <ul className="grid gap-6 sm:grid-cols-2">
                 {[
                   [<CalendarBlank key="c" size={22} weight="light" />, t('Solo períodos fijos', 'Só períodos fixos'), t('Quincena, mes o temporada completa. Entrada a las 15 h y salida a las 11 h.', 'Quinzena, mês ou temporada completa. Entrada às 15 h e saída às 11 h.')],
-                  [<FileText key="f" size={22} weight="light" />, t('Contrato digital', 'Contrato digital'), t('Arrendamiento de temporada según la legislación uruguaya, firmado antes del check-in.', 'Locação por temporada conforme a legislação uruguaia, assinada antes do check-in.')],
-                  [<ShieldCheck key="s" size={22} weight="light" />, t('Pago en custodia', 'Pagamento em custódia'), t('EVP retiene el pago y lo libera al propietario 24–48 h después de tu check-in.', 'A EVP retém o pagamento e o libera ao proprietário 24–48 h após o seu check-in.')],
-                  [<ClipboardText key="i" size={22} weight="light" />, t('Inventario digital', 'Inventário digital'), t('Al ingresar revisás el checklist de la unidad y aceptás el reglamento del edificio.', 'Na entrada você confere o checklist da unidade e aceita o regulamento do edifício.')],
+                  [<ChatCircleText key="f" size={22} weight="light" />, t('Trato directo', 'Contato direto'), t('Tu consulta le llega al propietario, que te responde por email o WhatsApp. Sin intermediarios.', 'Sua consulta chega ao proprietário, que responde por e-mail ou WhatsApp. Sem intermediários.')],
+                  [<Handshake key="s" size={22} weight="light" />, t('Sin comisiones', 'Sem comissões'), t('EVP no cobra comisión ni cargos. El precio es el que fija el propietario.', 'A EVP não cobra comissão nem taxas. O preço é o definido pelo proprietário.')],
+                  [<ShieldCheck key="i" size={22} weight="light" />, t('Propietario verificado', 'Proprietário verificado'), t('EVP valida que quien publica sea el titular de la unidad. El contrato y el pago se acuerdan entre ustedes.', 'A EVP valida que quem anuncia é o titular da unidade. O contrato e o pagamento são acertados entre vocês.')],
                 ].map(([icon, title, body], i) => (
                   <li key={i} className="flex gap-4">
                     <span className="mt-0.5 text-marine-strong">{icon}</span>
@@ -165,27 +210,29 @@ export default function UnitPage() {
                 ))}
               </ul>
             </section>
+
+            <ReportListing unitId={u.id} />
           </div>
 
-          {/* Booking panel */}
-          <aside aria-label={t('Reservar', 'Reservar')}>
-            <div ref={selectorRef} className="flex flex-col gap-6 rounded-[22px] p-6 shadow-[var(--shadow-ambient)] ring-1 ring-line lg:sticky lg:top-28">
+          {/* Inquiry panel */}
+          <aside aria-label={t('Consultar al propietario', 'Consultar o proprietário')}>
+            <div className="flex flex-col gap-6 rounded-[22px] p-6 shadow-[var(--shadow-ambient)] ring-1 ring-line lg:sticky lg:top-28">
               <div className="flex items-baseline justify-between gap-3">
                 <h2 className="f-h3 text-[1.125rem]">{t('Elegí tu período', 'Escolha seu período')}</h2>
                 <span className="text-[0.75rem] text-mute">{t('Temporada 2026 – 27', 'Temporada 2026 – 27')}</span>
               </div>
               <PeriodSelector value={period} onChange={setPeriod} unit={u} name={`p-${u.id}`} />
               {period ? (
-                <PriceBreakdown net={net} periodId={period} />
+                <PeriodPrice price={price} periodId={period} />
               ) : (
                 <p className="rounded-[12px] bg-mist p-4 text-[0.875rem] text-mute">
-                  {t('Desde', 'A partir de')} <span className="f-num font-semibold text-ink">{usd(minPrice(u.prices), lang)}</span> {t('por quincena. Elegí un período para ver el desglose completo.', 'por quinzena. Escolha um período para ver o detalhamento completo.')}
+                  {t('Desde', 'A partir de')} <span className="f-num font-semibold text-ink">{usd(minPrice(u.prices), lang)}</span> {t('por quincena. Sin comisiones ni cargos de EVP.', 'por quinzena. Sem comissões nem taxas da EVP.')}
                 </p>
               )}
-              <Button size="lg" onClick={reserve} trailing className="w-full">
-                {period ? t('Reservar este período', 'Reservar este período') : t('Elegí un período', 'Escolha um período')}
+              <Button size="lg" onClick={inquire} trailing={<ChatCircleText size={16} />} className="w-full">
+                {u.channel.type === 'agency' ? t('Consultar a la inmobiliaria', 'Consultar a imobiliária') : t('Consultar al propietario', 'Consultar o proprietário')}
               </Button>
-              <p className="text-center text-[0.8125rem] text-mute">{t('No se cobra nada hasta firmar el contrato.', 'Nada é cobrado até assinar o contrato.')}</p>
+              <p className="text-center text-[0.8125rem] text-mute">{t('Gratis y sin compromiso. Te responde directamente.', 'Grátis e sem compromisso. A resposta vem direto.')}</p>
             </div>
           </aside>
         </div>
@@ -197,7 +244,7 @@ export default function UnitPage() {
           <div className="flex min-w-0 flex-col">
             {period ? (
               <>
-                <span className="f-num font-semibold">{usd(breakdown(net).total, lang)} <span className="text-[0.75rem] font-normal text-mute">{t('total', 'total')}</span></span>
+                <span className="f-num font-semibold">{usd(price, lang)}</span>
                 <span className="truncate text-[0.75rem] text-mute">{PERIOD_BY_ID[period].name[lang]}</span>
               </>
             ) : (
@@ -207,8 +254,8 @@ export default function UnitPage() {
               </>
             )}
           </div>
-          <Button onClick={reserve} className={cx('shrink-0')}>
-            {period ? t('Reservar', 'Reservar') : t('Elegir período', 'Escolher período')}
+          <Button onClick={inquire} className={cx('shrink-0')}>
+            {t('Consultar', 'Consultar')}
           </Button>
         </div>
       </div>

@@ -1,6 +1,8 @@
 # EVP · Edificios VIP Punta del Este
 
-Prototipo funcional de la web app (PWA responsiva) para alquiler temporario en edificios VIP certificados de Punta del Este. Contexto de negocio: [`docs/contexto_maestro_evp.md`](docs/contexto_maestro_evp.md).
+Prototipo funcional de la web app (PWA responsiva) para promocionar el alquiler temporario de unidades en edificios VIP certificados de Punta del Este.
+
+**Modelo vigente:** EVP es una plataforma de promoción, no una inmobiliaria. El interesado consulta directo al propietario; EVP no cobra comisión ni procesa pagos, y publicar es gratis el primer año. Ver [`docs/actualizacion_modelo_2026-11.md`](docs/actualizacion_modelo_2026-11.md), que actualiza el [contexto maestro](docs/contexto_maestro_evp.md).
 
 ## Cómo correrlo
 
@@ -24,12 +26,11 @@ npm run build && npm run preview
 |---|---|---|
 | `/` | Home del huésped | Hero con storytelling (de la tarde a la noche al hacer scroll), buscador por zona/edificio + período + huéspedes, carrusel de edificios, "cómo funciona", mapa de zonas y comparativa con portales masivos |
 | `/buscar` | Resultados | Lista + mapa. Filtros por zona, edificio, período fijo, rango USD, dormitorios, baños, huéspedes, vista al mar, garage, pet friendly y "Directo de Dueño" o "Inmobiliaria Aliada". Orden por precio. Los filtros quedan en la URL |
-| `/edificios`, `/edificios/:id` | Ficha madre del edificio | Ubicación y coordenadas, año, pisos, unidades, arquitectos, categoría, checklist de amenities verificados, fecha de certificación y unidades del edificio |
-| `/unidades/:id` | Ficha de la unidad | Galería, plano de planta generado, selector de período (quincena, mes, temporada) con disponibilidad real y desglose del precio: neto + tarifa del 5% |
-| `/reservar/:id` | Checkout | 3 pasos: datos del huésped → contrato de temporada (Uruguay) + reglamento + firma digital → pago con tarjeta (Stripe/dLocal) o PIX (dLocal/EBANX) en custodia |
-| `/reserva/:code`, `/contrato/:code` | Reserva | Estado de la custodia (contrato → pago → check-in → liberación 24–48 h), inventario digital de ingreso y contrato imprimible o en PDF |
+| `/edificios`, `/edificios/:id` | Ficha madre del edificio | Ubicación y coordenadas, año, pisos, unidades, distancia a la playa, ascensores, mascotas, arquitectos, categoría, 29 amenities en 6 grupos, normas de convivencia, sitio web, fecha de certificación y unidades del edificio. Plantilla de carga: [`docs/plantilla_ficha_edificio.md`](docs/plantilla_ficha_edificio.md) |
+| `/unidades/:id` | Ficha de la unidad | Galería, plano de planta generado, selector de período (quincena, mes, temporada) con disponibilidad, precio del propietario sin cargos y "Reportar publicación" |
+| `/consultar/:id` | Consulta directa | Email verificado → período, datos, mensaje prearmado y autorización para compartir los datos con el anunciante. Al enviar: contacto del propietario (si lo cargó) y consejos para alquilar seguro |
 | `/propietarios`, `/propietarios/publicar` | Propietarios | Landing (0% año 1, privacidad, calculadora) y formulario ágil de 5 pasos: edificio → piso/unidad → distribución → tarifas USD → fotos (mín. 5, con living, dormitorio y terraza) |
-| `/panel` | Panel del propietario | Montos en custodia y transferidos, ocupación por período de cada unidad y reservas con su estado de liquidación |
+| `/panel` | Panel del propietario | Consultas recibidas (responder por WhatsApp o email, "Se lo alquilé", descartar), disponibilidad por período que marca el dueño, contacto para interesados y verificación de titularidad |
 | `/administraciones` | Administraciones y portería | Propuesta de valor, proceso de alianza y formulario de relevamiento |
 
 ## Cuentas y seguridad
@@ -37,19 +38,20 @@ npm run build && npm run preview
 | Ruta | Qué hace |
 |---|---|
 | `/ingresar` | Ingreso sin contraseña: código de 6 dígitos por email y, para propietarios, un segundo código por SMS |
-| `/cuenta` | Perfil, mis reservas, verificación en dos pasos, dispositivos con sesión abierta, descargar mis datos y eliminar la cuenta |
+| `/cuenta` | Perfil, mis consultas, unidades guardadas, verificación en dos pasos, dispositivos con sesión abierta, descargar mis datos y eliminar la cuenta |
 
 - **Cuentas de demo:**
   - `valentina@ejemplo.com`: propietaria, con verificación en dos pasos.
-  - `martin@ejemplo.com`: huésped con una reserva.
+  - `martin@ejemplo.com`: interesado con una consulta enviada.
   - Cualquier otro email crea una cuenta nueva.
 - **Códigos en pantalla:** como no hay servidor de email ni de SMS, los códigos aparecen en una "bandeja de demo" en la pantalla.
 - **Permisos:**
-  - Cada huésped ve solo sus reservas y contratos.
-  - Cada propietario ve solo sus unidades.
+  - Cada interesado ve solo sus consultas.
+  - Cada propietario ve solo sus unidades y las consultas sobre ellas.
   - Las rutas privadas piden login.
 - **Unidades nuevas:** quedan ocultas hasta que EVP valida el documento de titularidad.
-- **Acciones sensibles:** cambiar la cuenta de cobro o eliminar la cuenta pide un código nuevo aunque la sesión esté abierta.
+- **Teléfono del propietario:** nunca es público; solo lo ve quien envió una consulta con email verificado.
+- **Acciones sensibles:** cambiar el teléfono de contacto o eliminar la cuenta pide un código nuevo aunque la sesión esté abierta.
 - **Controles:**
   - Bloqueo tras 5 códigos incorrectos.
   - Cierre de sesión por inactividad (30 min).
@@ -65,10 +67,9 @@ Interfaz en **español y portugués** (selector ES/PT; detecta el idioma del nav
 
 - **Catálogo ficticio.** Los 10 edificios, los arquitectos y las inmobiliarias son inventados.
 - **Ilustraciones en lugar de fotos.** Las imágenes de los edificios son ilustraciones arquitectónicas procedurales (`src/components/ArchScene.tsx`) hasta que EVP produzca las fotos profesionales. Cada unidad acepta `photos[]`: las fotos que carga el propietario se muestran tal cual.
-- **Pagos simulados.** No se conecta con Stripe, dLocal ni EBANX y no se cobra nada. Tarjeta de prueba: `4242 4242 4242 4242`.
-- **Datos guardados solo en el navegador.** Viven en `localStorage`, incluidas las cuentas y las sesiones; el botón "Reiniciar datos de demo" del pie de página resetea reservas y publicaciones. En producción esto lo reemplazan un backend y un proveedor de autenticación.
+- **WhatsApp y llamadas simulados.** Los botones muestran un aviso en lugar de abrir WhatsApp, para que los datos de demo no lleguen a un número real.
+- **Datos guardados solo en el navegador.** Viven en `localStorage`, incluidas las cuentas y las sesiones; el botón "Reiniciar datos de demo" del pie de página resetea consultas, disponibilidad y publicaciones. En producción esto lo reemplazan un backend y un proveedor de autenticación.
 - **Emails y SMS simulados.** Se muestran en la bandeja de demo; no se envía nada.
-- **Contrato sin validar.** El texto en `src/components/Contract.tsx` es un **borrador modelo**: tiene que revisarlo un escribano o abogado uruguayo.
 
 ## Stack
 
@@ -83,4 +84,4 @@ React 19 · React Router 7 · Vite 7 · Tailwind CSS 4 · GSAP (ScrollTrigger) �
 Verificado con:
 - **axe-core** (WCAG 2.1 AA): sin violaciones en todas las rutas, incluidas login, cuenta, panel y el diálogo de verificación.
 - **Detector de anti-patrones de `impeccable`:** sin hallazgos.
-- **Flujos end-to-end en Playwright:** reserva completa, publicación con fotos y los 22 casos de seguridad.
+- **Flujos end-to-end en Playwright:** consulta directa completa, panel del propietario (consultas, disponibilidad, contacto), publicación con fotos y los 22 casos de seguridad.

@@ -4,17 +4,19 @@
 
 brand
 
-(Las superficies de producto —buscador, resultados, checkout, formulario del propietario, panel— se diseñan con el registro **product**: ver `DESIGN.md`, sección "Dos registros".)
+(Las superficies de producto —buscador, resultados, consulta, formulario del propietario, panel— se diseñan con el registro **product**: ver `DESIGN.md`, sección "Dos registros".)
 
 ## Users
 
-- **Huésped**: familias y ejecutivos de alto poder adquisitivo de Buenos Aires, San Pablo, Porto Alegre y Montevideo que planifican la temporada (dic-abr) con meses de anticipación. Llegan casi siempre desde el celular, a través de Instagram o Facebook, en pausas cortas o de noche. Después comparan con calma en la computadora. Quieren certeza: que el edificio sea de verdad VIP, que el pago esté protegido y que el contrato sea formal.
-- **Propietario**: copropietario de una unidad en una torre de 4-5 estrellas. Desconfía de exponer su inmueble en portales masivos. Valora la discreción, el cobro del 100% neto y no perder tiempo: publicar le tiene que llevar menos de 3 minutos.
+- **Huésped / interesado**: familias y ejecutivos de alto poder adquisitivo, sobre todo de Buenos Aires y en segundo lugar de San Pablo (también Porto Alegre y Montevideo), que planifican la temporada (dic-abr) con meses de anticipación. Llegan casi siempre desde el celular, a través de Instagram o Facebook, en pausas cortas o de noche. Después comparan con calma en la computadora. Quieren certeza: que el edificio sea de verdad VIP y que quien publica sea realmente el dueño.
+- **Propietario**: copropietario de una unidad en una torre de 4-5 estrellas. Desconfía de exponer su inmueble en portales masivos. Valora la discreción, no pagar comisiones y no perder tiempo: publicar le tiene que llevar menos de 3 minutos. Conseguir que publique es lo más difícil del negocio.
 - **Administraciones y portería**: administradores y encargados de los 20 edificios target. Detectan las unidades disponibles y buscan un servicio que sume valor a la comunidad sin generar fricción con el reglamento.
 
 ## Product Purpose
 
-EVP es la única plataforma de alquiler temporario de Punta del Este dedicada en exclusiva a edificios VIP certificados. Cada edificio tiene una ficha madre que EVP verifica. Se alquila solo por quincena, mes o temporada, con contrato digital y pago en custodia. El éxito se mide en 100 unidades captadas en 20 torres y 100 contratos cerrados la primera temporada.
+EVP es una plataforma de **promoción** de unidades en edificios VIP certificados de Punta del Este, dedicada en exclusiva a ese segmento. **No es una inmobiliaria:** no intermedia, no cobra comisión ni procesa pagos. Cada edificio tiene una ficha madre completa que EVP releva y certifica. Los propietarios verificados publican gratis el primer año y los interesados los consultan directamente, siempre por quincena, mes o temporada.
+
+El orden es: primero edificios, después propietarios y recién después inquilinos. El éxito se mide primero en edificios cargados y unidades publicadas (referencia: 10 edificios × ~50 unidades) y luego en consultas recibidas por unidad. Ver `docs/actualizacion_modelo_2026-11.md`.
 
 ## Brand Personality
 
@@ -31,10 +33,10 @@ Emociones objetivo: confianza ("esto está verificado"), deseo ("quiero ese atar
 
 ## Design Principles
 
-1. **Verificado antes que prometido.** Cada afirmación de confianza (certificación, custodia, contrato) aparece como un dato concreto y comprobable, no como un slogan.
+1. **Verificado antes que prometido.** Cada afirmación de confianza (edificio certificado, titular verificado) aparece como un dato concreto y comprobable, no como un slogan.
 2. **El lugar es la marca.** La luz, el mar y la arquitectura de Punta del Este definen la paleta y la imaginería. La marca no inventa un "lujo" genérico.
-3. **Sin fricción, sin ruido.** Los períodos fijos reemplazan al calendario y el precio se muestra siempre desglosado. Cada pantalla tiene una sola tarea principal.
-4. **Discreción como servicio.** Al propietario se le muestra explícitamente qué datos son públicos y cuáles no. Nunca se expone su identidad.
+3. **Sin fricción, sin ruido.** Los períodos fijos reemplazan al calendario y el precio es el del dueño, sin cargos agregados. Cada pantalla tiene una sola tarea principal.
+4. **Discreción como servicio.** Al propietario se le muestra explícitamente qué datos son públicos y cuáles no. Su teléfono solo lo ve quien lo consulta con email verificado; su documento, solo EVP.
 5. **Un solo idioma visual, dos voces.** Lo aspiracional para el huésped y lo sobrio para el propietario comparten tokens y componentes.
 
 ## Accessibility & Inclusion

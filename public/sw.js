@@ -1,5 +1,5 @@
 // EVP service worker: app-shell caching so the PWA opens offline.
-const CACHE = 'evp-v1'
+const CACHE = 'evp-v2'
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (e) => {

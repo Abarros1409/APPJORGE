@@ -1,4 +1,4 @@
-import { CheckCircle, ClipboardText, Handshake, IdentificationCard, Megaphone, Scroll, UsersThree } from '@phosphor-icons/react'
+import { Buildings, CheckCircle, ClipboardText, Handshake, IdentificationCard, Megaphone, Scroll, UsersThree } from '@phosphor-icons/react'
 import { useId, useState, type FormEvent } from 'react'
 import { ArchScene } from '../components/ArchScene'
 import { Button, Field } from '../components/ui'
@@ -27,15 +27,16 @@ export default function Admins() {
   }
 
   const benefits = [
-    [<IdentificationCard key="i" size={24} weight="light" />, t('Huéspedes identificados', 'Hóspedes identificados'), t('Cada huésped llega con documento verificado, contrato firmado y registro previo para portería.', 'Cada hóspede chega com documento verificado, contrato assinado e registro prévio para a portaria.')],
-    [<Scroll key="s" size={24} weight="light" />, t('Reglamento aceptado por contrato', 'Regulamento aceito em contrato'), t('El reglamento de copropiedad integra el contrato. Incumplirlo tiene consecuencias concretas.', 'O regulamento do condomínio faz parte do contrato. Descumpri-lo tem consequências concretas.')],
+    [<Buildings key="b" size={24} weight="light" />, t('Ficha profesional del edificio', 'Ficha profissional do edifício'), t('EVP releva el edificio y publica su ficha madre con todas sus características: amenities, servicios y seguridad. Sin costo para la comunidad.', 'A EVP vistoria o edifício e publica a ficha técnica com todas as características: amenities, serviços e segurança. Sem custo para a comunidade.')],
+    [<IdentificationCard key="i" size={24} weight="light" />, t('Solo copropietarios verificados', 'Só condôminos verificados'), t('Cada unidad la publica su titular, validado por EVP con el título de propiedad. Nada de intermediarios desconocidos.', 'Cada unidade é anunciada pelo titular, validado pela EVP com a escritura. Nada de intermediários desconhecidos.')],
+    [<Scroll key="s" size={24} weight="light" />, t('Reglamento a la vista', 'Regulamento visível'), t('Las normas de convivencia del edificio figuran en su ficha: quien consulta las conoce antes de llegar.', 'As normas de convivência do edifício aparecem na ficha: quem consulta as conhece antes de chegar.')],
     [<UsersThree key="u" size={24} weight="light" />, t('Sin rotación diaria', 'Sem rotatividade diária'), t('Solo estadías por quincena, mes o temporada. Menos movimiento en ascensores, lobby y amenities.', 'Só estadias por quinzena, mês ou temporada. Menos movimento em elevadores, lobby e amenities.')],
-    [<ClipboardText key="c" size={24} weight="light" />, t('Reporte de temporada', 'Relatório de temporada'), t('Al cierre, el consejo recibe un informe con ocupación, incidencias y contactos.', 'No encerramento, o conselho recebe um relatório com ocupação, ocorrências e contatos.')],
+    [<ClipboardText key="c" size={24} weight="light" />, t('Reporte de temporada', 'Relatório de temporada'), t('Al cierre, el consejo recibe un informe con las unidades publicadas y la demanda que recibió el edificio.', 'No encerramento, o conselho recebe um relatório com as unidades anunciadas e a demanda que o edifício recebeu.')],
   ] as const
 
   const process = [
     [t('Relevamiento', 'Vistoria'), t('Visitamos el edificio y producimos la ficha madre con fotos profesionales.', 'Visitamos o edifício e produzimos a ficha técnica com fotos profissionais.')],
-    [t('Acuerdo institucional', 'Acordo institucional'), t('Definimos con la administración el protocolo de ingreso y de registro de huéspedes.', 'Definimos com a administração o protocolo de entrada e de registro de hóspedes.')],
+    [t('Acuerdo institucional', 'Acordo institucional'), t('Acordamos con la administración cómo presentar EVP a los copropietarios y cómo se registran los huéspedes en portería.', 'Combinamos com a administração como apresentar a EVP aos condôminos e como os hóspedes se registram na portaria.')],
     [t('Presentación a copropietarios', 'Apresentação aos proprietários'), t('Enviamos una carta formal a cada unidad, entregada por recepción.', 'Enviamos uma carta formal a cada unidade, entregue pela recepção.')],
     [t('Temporada', 'Temporada'), t('Canal directo con EVP para portería, de diciembre a abril.', 'Canal direto com a EVP para a portaria, de dezembro a abril.')],
   ]
@@ -53,8 +54,8 @@ export default function Admins() {
           <h1 className="f-display max-w-[16ch] text-[clamp(2.4rem,5.5vw,4.5rem)]">{t('Un servicio para la comunidad del edificio.', 'Um serviço para a comunidade do edifício.')}</h1>
           <p className="max-w-[54ch] text-[1.125rem] text-on-ink-mute">
             {t(
-              'Los alquileres de temporada ya ocurren en tu edificio. Con EVP pasan por un contrato, un registro y un reglamento aceptado, y no por un portal masivo.',
-              'Os aluguéis de temporada já acontecem no seu edifício. Com a EVP, passam por um contrato, um registro e um regulamento aceito, e não por um portal de massa.',
+              'Los alquileres de temporada ya ocurren en tu edificio. Con EVP se publican con la ficha certificada del edificio, solo por sus copropietarios verificados y nunca en un portal masivo.',
+              'Os aluguéis de temporada já acontecem no seu edifício. Com a EVP, são anunciados com a ficha certificada do edifício, só pelos condôminos verificados e nunca em um portal de massa.',
             )}
           </p>
         </div>

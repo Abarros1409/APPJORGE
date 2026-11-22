@@ -1,9 +1,9 @@
-import { Check, MapPin, ArrowUpRight, Minus } from '@phosphor-icons/react'
+import { Check, MapPin, ArrowUpRight, Globe } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { BuildingVisual, UnitCard } from '../components/units'
 import { ButtonLink, Seal, Stars, Toggle } from '../components/ui'
-import { AMENITIES, BUILDINGS, BUILDING_BY_ID, ZONES, ZONE_NAME, type AmenityId, type ZoneId } from '../lib/data'
+import { AMENITIES, AMENITY_GROUPS, BUILDINGS, BUILDING_BY_ID, BUILDING_RULES, ZONES, ZONE_NAME, type ZoneId } from '../lib/data'
 import { longDate } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { useStore } from '../lib/store'
@@ -80,7 +80,11 @@ export function BuildingPage() {
     [t('Año de construcción', 'Ano de construção'), <span className="f-num">{b.year} · {age} {age === 1 ? t('año', 'ano') : t('años', 'anos')}</span>],
     [t('Pisos', 'Andares'), <span className="f-num">{b.floors}</span>],
     [t('Unidades totales', 'Unidades totais'), <span className="f-num">{b.units}</span>],
+    [t('Playa', 'Praia'), b.beachMeters === 0 ? t('Frente al mar', 'De frente para o mar') : <span className="f-num">{t(`A ${b.beachMeters} m`, `A ${b.beachMeters} m`)}</span>],
+    [t('Ascensores', 'Elevadores'), <span className="f-num">{b.elevators}</span>],
+    [t('Mascotas', 'Animais'), b.pets ? t('Permitidas en unidades habilitadas', 'Permitidos em unidades habilitadas') : t('No permitidas por reglamento', 'Não permitidos pelo regulamento')],
     [t('Arquitectura', 'Arquitetura'), b.architects],
+    ...(b.renovated ? ([[t('Última renovación', 'Última reforma'), <span className="f-num">{b.renovated}</span>]] as [string, React.ReactNode][]) : []),
     [t('Categoría', 'Categoria'), <Stars n={b.stars} />],
   ]
   return (
@@ -123,26 +127,50 @@ export function BuildingPage() {
             {t('Ver ubicación exacta', 'Ver localização exata')}
             <ArrowUpRight size={14} />
           </a>
+          {b.website && (
+            <a href={b.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 self-start text-[0.9375rem] font-medium text-marine-strong underline-offset-4 hover:underline">
+              <Globe size={18} />
+              {t('Sitio web del edificio', 'Site do edifício')}
+              <ArrowUpRight size={14} />
+            </a>
+          )}
+          <div className="flex flex-col gap-3 rounded-[18px] p-5 ring-1 ring-line">
+            <h3 className="font-semibold">{t('Normas de convivencia', 'Normas de convivência')}</h3>
+            <ul className="flex flex-col gap-2 text-[0.9375rem] text-mute">
+              {BUILDING_RULES.map((r) => (
+                <li key={r.es} className="flex gap-2.5">
+                  <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-line-strong" />
+                  {r[lang]}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
         <div className="flex flex-col gap-8">
           <div className="rounded-[22px] bg-mist p-6 md:p-8">
             <div className="flex items-baseline justify-between gap-4">
-              <h2 className="f-h3 text-[1.25rem]">{t('Amenities verificados', 'Amenities verificados')}</h2>
-              <span className="f-num text-[0.875rem] text-mute">
-                {b.amenities.length}/{Object.keys(AMENITIES).length}
-              </span>
+              <h2 className="f-h3 text-[1.25rem]">{t('Amenities y servicios verificados', 'Amenities e serviços verificados')}</h2>
+              <span className="f-num text-[0.875rem] text-mute">{b.amenities.length}</span>
             </div>
-            <ul className="mt-5 grid gap-x-6 sm:grid-cols-2">
-              {(Object.keys(AMENITIES) as AmenityId[]).map((a) => {
-                const has = b.amenities.includes(a)
+            <div className="mt-5 flex flex-col gap-5">
+              {AMENITY_GROUPS.map((g) => {
+                const present = g.ids.filter((a) => b.amenities.includes(a))
+                if (!present.length) return null
                 return (
-                  <li key={a} className={`flex items-center gap-2.5 border-b border-line py-2.5 text-[0.9375rem] ${has ? '' : 'text-mute'}`}>
-                    {has ? <Check size={16} className="shrink-0 text-ok" weight="bold" aria-label={t('Disponible', 'Disponível')} /> : <Minus size={16} className="shrink-0" aria-label={t('No disponible', 'Indisponível')} />}
-                    <span className={has ? '' : 'line-through decoration-line-strong'}>{AMENITIES[a][lang]}</span>
-                  </li>
+                  <div key={g.label.es}>
+                    <h3 className="text-[0.8125rem] font-semibold text-mute">{g.label[lang]}</h3>
+                    <ul className="mt-1 grid gap-x-6 sm:grid-cols-2">
+                      {present.map((a) => (
+                        <li key={a} className="flex items-center gap-2.5 border-b border-line py-2 text-[0.9375rem]">
+                          <Check size={16} className="shrink-0 text-ok" weight="bold" aria-hidden />
+                          {AMENITIES[a][lang]}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )
               })}
-            </ul>
+            </div>
             <p className="mt-5 text-[0.8125rem] text-mute">
               {t('Relevado y certificado por EVP el', 'Vistoriado e certificado pela EVP em')} {longDate(b.certifiedAt, lang)}.
             </p>

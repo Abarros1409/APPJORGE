@@ -5,10 +5,10 @@ import { CodeInput, StepUpDialog, useCodeError } from '../components/auth-ui'
 import { Button, ButtonLink, Field, InfoNote, cx } from '../components/ui'
 import { isOwner, maskPhone, useAuth } from '../lib/auth'
 import { BUILDING_BY_ID } from '../lib/data'
-import { dateTime, usd } from '../lib/format'
+import { dateTime, minPrice, usd } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { PERIOD_BY_ID } from '../lib/periods'
-import { bookingStatus, useStore } from '../lib/store'
+import { useStore, type InquiryStatus } from '../lib/store'
 
 function TwoFactor() {
   const { t } = useLang()
@@ -44,7 +44,7 @@ function TwoFactor() {
   return (
     <div className="flex flex-col gap-4">
       {isOwner(user) && (
-        <InfoNote tone="ocaso">{t('Es obligatoria para propietarios: sin ella no se pueden recibir liquidaciones.', 'É obrigatória para proprietários: sem ela não é possível receber repasses.')}</InfoNote>
+        <InfoNote tone="ocaso">{t('Es obligatoria para propietarios: sin ella no podés agregar ni cambiar el teléfono que ven los interesados.', 'É obrigatória para proprietários: sem ela você não pode adicionar nem alterar o telefone que os interessados veem.')}</InfoNote>
       )}
       {!sent ? (
         <form onSubmit={send} noValidate className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -70,7 +70,7 @@ function TwoFactor() {
 export default function Account() {
   const { t, lang } = useLang()
   const { user, session, sessions, updateUser, logout, logoutEverywhere, revokeSession, deleteAccount } = useAuth()
-  const { bookings, unitById } = useStore()
+  const { inquiries, unitById, favorites } = useStore()
   const nav = useNavigate()
   const { hash } = useLocation()
   const fid = useId()
@@ -83,11 +83,18 @@ export default function Account() {
   }, [hash])
 
   if (!user) return null
-  const mine = bookings.filter((b) => b.guest.email.toLowerCase() === user.email)
-  const active = mine.filter((b) => bookingStatus(b) !== 'liberado')
+  // Authorization: a tenant only sees the inquiries sent from their verified email.
+  const mine = inquiries.filter((q) => q.guest.email.toLowerCase() === user.email)
+  const savedUnits = favorites.map((id) => unitById(id)).filter((u) => u && !u.verification)
+  const guestStatus: Record<InquiryStatus, [string, string]> = {
+    nueva: [t('Enviada', 'Enviada'), 'bg-marine-soft text-marine-strong'],
+    respondida: [t('Respondida', 'Respondida'), 'bg-warn-soft text-[oklch(0.45_0.11_70)]'],
+    alquilado: [t('Acordada con el propietario', 'Combinada com o proprietário'), 'bg-ok-soft text-ok'],
+    descartada: [t('No disponible', 'Indisponível'), 'bg-mist text-mute'],
+  }
 
   const download = () => {
-    const data = { cuenta: { email: user.email, nombre: user.name, telefono: user.phone ?? null, roles: user.roles, creada: user.createdAt, verificacion_dos_pasos: user.mfa }, reservas: mine, sesiones: sessions.map(({ device, createdAt, lastActive }) => ({ device, createdAt, lastActive })) }
+    const data = { cuenta: { email: user.email, nombre: user.name, telefono: user.phone ?? null, roles: user.roles, creada: user.createdAt, verificacion_dos_pasos: user.mfa }, consultas: mine, guardados: favorites, sesiones: sessions.map(({ device, createdAt, lastActive }) => ({ device, createdAt, lastActive })) }
     const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
     const a = document.createElement('a')
     a.href = url
@@ -104,7 +111,8 @@ export default function Account() {
           <ul className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:flex-col lg:px-0">
             {[
               ['perfil', t('Perfil', 'Perfil')],
-              ['reservas', t('Mis reservas', 'Minhas reservas')],
+              ['consultas', t('Mis consultas', 'Minhas consultas')],
+              ['guardados', t('Guardados', 'Salvos')],
               ['seguridad', t('Seguridad', 'Segurança')],
               ['sesiones', t('Sesiones', 'Sessões')],
               ['datos', t('Mis datos', 'Meus dados')],
@@ -151,30 +159,56 @@ export default function Account() {
             </p>
           </section>
 
-          <section id="reservas" className={section} aria-labelledby="res-t">
-            <h2 id="res-t" className="f-h3 text-[1.25rem]">{t('Mis reservas', 'Minhas reservas')}</h2>
+          <section id="consultas" className={section} aria-labelledby="res-t">
+            <h2 id="res-t" className="f-h3 text-[1.25rem]">{t('Mis consultas', 'Minhas consultas')}</h2>
             {mine.length ? (
               <ul className="flex flex-col divide-y divide-line rounded-[16px] ring-1 ring-line">
-                {mine.map((b) => {
-                  const u = unitById(b.unitId)
+                {mine.map((q) => {
+                  const u = unitById(q.unitId)
+                  const [label, tone] = guestStatus[q.status]
                   return (
-                    <li key={b.code}>
-                      <Link to={`/reserva/${b.code}`} className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-mist">
-                        <span className="flex flex-col">
-                          <span className="font-semibold">{u ? `${BUILDING_BY_ID[u.buildingId].name} · ${u.unit}` : b.unitId}</span>
-                          <span className="text-[0.875rem] text-mute">{PERIOD_BY_ID[b.period].name[lang]} · {b.code}</span>
-                        </span>
-                        <span className="f-num font-medium">{usd(b.total, lang)}</span>
-                      </Link>
+                    <li key={q.id} className="flex flex-col gap-2 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <Link to={`/unidades/${q.unitId}`} className="font-semibold hover:underline">
+                          {u ? `${BUILDING_BY_ID[u.buildingId].name} · ${u.unit}` : q.unitId}
+                        </Link>
+                        <span className={`rounded-full px-2.5 py-1 text-[0.75rem] font-medium ${tone}`}>{label}</span>
+                      </div>
+                      <p className="text-[0.875rem] text-mute">
+                        {q.period ? PERIOD_BY_ID[q.period].name[lang] : t('Sin período definido', 'Sem período definido')} · {dateTime(q.createdAt, lang)}
+                      </p>
+                      <p className="line-clamp-2 text-[0.9375rem]">{q.message}</p>
                     </li>
                   )
                 })}
               </ul>
             ) : (
               <p className="text-mute">
-                {t('Todavía no tenés reservas con este email.', 'Você ainda não tem reservas com este e-mail.')}{' '}
+                {t('Todavía no enviaste consultas.', 'Você ainda não enviou consultas.')}{' '}
                 <Link to="/buscar" className="font-medium text-marine-strong underline-offset-4 hover:underline">{t('Explorar unidades', 'Explorar unidades')}</Link>
               </p>
+            )}
+          </section>
+
+          <section id="guardados" className={section} aria-labelledby="fav-t">
+            <h2 id="fav-t" className="f-h3 text-[1.25rem]">{t('Unidades guardadas', 'Unidades salvas')}</h2>
+            {savedUnits.length ? (
+              <ul className="flex flex-col divide-y divide-line rounded-[16px] ring-1 ring-line">
+                {savedUnits.map((u) => (
+                  <li key={u!.id}>
+                    <Link to={`/unidades/${u!.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-mist">
+                      <span className="font-semibold">
+                        {BUILDING_BY_ID[u!.buildingId].name} · {u!.unit}
+                      </span>
+                      <span className="f-num text-[0.875rem] text-mute">
+                        {t('desde', 'a partir de')} {usd(minPrice(u!.prices), lang)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-mute">{t('Tocá el corazón de una unidad para guardarla acá.', 'Toque no coração de uma unidade para salvá-la aqui.')}</p>
             )}
           </section>
 
@@ -184,7 +218,7 @@ export default function Account() {
               <h2 id="seg-t" className="f-h3 text-[1.25rem]">{t('Verificación en dos pasos', 'Verificação em duas etapas')}</h2>
             </div>
             <p className="text-[0.9375rem] text-mute">
-              {t('Además del código por email, te pedimos un código por SMS al ingresar y antes de acciones sensibles, como cambiar la cuenta de cobro.', 'Além do código por e-mail, pedimos um código por SMS ao entrar e antes de ações sensíveis, como alterar a conta de recebimento.')}
+              {t('Además del código por email, te pedimos un código por SMS al ingresar y antes de acciones sensibles, como cambiar el teléfono de tus publicaciones.', 'Além do código por e-mail, pedimos um código por SMS ao entrar e antes de ações sensíveis, como alterar o telefone dos seus anúncios.')}
             </p>
             <TwoFactor />
           </section>
@@ -234,15 +268,13 @@ export default function Account() {
               <Button variant="outline" size="sm" onClick={download} trailing={<DownloadSimple size={14} />}>
                 {t('Descargar mis datos', 'Baixar meus dados')}
               </Button>
-              <Button variant="ghost" size="sm" className="text-bad" onClick={() => setConfirmDelete(true)} disabled={active.length > 0 || isOwner(user)}>
+              <Button variant="ghost" size="sm" className="text-bad" onClick={() => setConfirmDelete(true)} disabled={isOwner(user)}>
                 <span className="inline-flex items-center gap-2"><Trash size={14} />{t('Eliminar mi cuenta', 'Excluir minha conta')}</span>
               </Button>
             </div>
-            {(active.length > 0 || isOwner(user)) && (
+            {isOwner(user) && (
               <p className="text-[0.8125rem] text-mute">
-                {isOwner(user)
-                  ? t('Las cuentas de propietario se dan de baja con soporte, para cerrar antes las liquidaciones pendientes.', 'Contas de proprietário são encerradas com o suporte, para fechar antes os repasses pendentes.')
-                  : t('No se puede eliminar mientras tengas reservas en curso. Los contratos firmados se conservan el plazo que exige la ley.', 'Não é possível excluir enquanto houver reservas em andamento. Os contratos assinados são mantidos pelo prazo legal.')}
+                {t('Las cuentas de propietario se dan de baja con soporte, para despublicar antes sus unidades y avisar a quienes consultaron.', 'Contas de proprietário são encerradas com o suporte, para despublicar antes as unidades e avisar quem consultou.')}
               </p>
             )}
           </section>

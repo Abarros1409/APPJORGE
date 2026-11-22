@@ -347,8 +347,8 @@ export default function Results() {
                 <p className="max-w-[48ch] text-mute">
                   {f.periodo
                     ? t(
-                        'Las quincenas de enero son las primeras en reservarse. Probá con febrero o con el mes completo, o ampliá la zona.',
-                        'As quinzenas de janeiro são as primeiras a serem reservadas. Tente fevereiro ou o mês inteiro, ou amplie o bairro.',
+                        'Las quincenas de enero son las primeras en alquilarse. Probá con febrero o con el mes completo, o ampliá la zona.',
+                        'As quinzenas de janeiro são as primeiras a serem alugadas. Tente fevereiro ou o mês inteiro, ou amplie o bairro.',
                       )
                     : t('Probá quitando algún filtro de confort o ampliando el rango de precio.', 'Tente remover algum filtro de conforto ou ampliar a faixa de preço.')}
                 </p>

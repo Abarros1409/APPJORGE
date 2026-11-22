@@ -37,7 +37,7 @@ export default function Login() {
           {[
             [<LockKey key="l" size={20} />, t('Sin contraseñas: un código nuevo cada vez.', 'Sem senhas: um código novo a cada vez.')],
             [<ShieldCheck key="s" size={20} />, t('Verificación en dos pasos para propietarios.', 'Verificação em duas etapas para proprietários.')],
-            [<UserCircle key="u" size={20} />, t('Cada cuenta ve solo sus reservas y sus unidades.', 'Cada conta vê só suas reservas e unidades.')],
+            [<UserCircle key="u" size={20} />, t('Cada cuenta ve solo sus consultas y sus unidades.', 'Cada conta vê só suas consultas e unidades.')],
           ].map(([i, l], k) => (
             <li key={k} className="flex items-center gap-3">
               <span className="text-ocaso">{i}</span>
@@ -63,7 +63,7 @@ export default function Login() {
                 <span className="font-medium">valentina@ejemplo.com</span> · {t('propietaria, con verificación en dos pasos', 'proprietária, com verificação em duas etapas')}
               </li>
               <li>
-                <span className="font-medium">martin@ejemplo.com</span> · {t('huésped con una reserva', 'hóspede com uma reserva')}
+                <span className="font-medium">martin@ejemplo.com</span> · {t('interesado con una consulta enviada', 'interessado com uma consulta enviada')}
               </li>
               <li className="text-mute">{t('O cualquier email: se crea una cuenta nueva.', 'Ou qualquer e-mail: uma conta nova é criada.')}</li>
             </ul>

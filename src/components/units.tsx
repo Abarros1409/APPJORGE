@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { ArchScene } from './ArchScene'
 import { ChannelTag, cx } from './ui'
 import { BUILDING_BY_ID, ZONE_NAME, type Building, type Unit } from '../lib/data'
-import { breakdown, GUEST_FEE_RATE, minPrice, usd } from '../lib/format'
+import { minPrice, usd } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { isAvailable, PERIOD_BY_ID, PERIOD_GROUPS, type PeriodId } from '../lib/periods'
 import { useStore } from '../lib/store'
@@ -106,7 +106,7 @@ export function UnitCard({ u, period, highlight, onHover }: { u: Unit; period?: 
           </div>
           {!available && (
             <span className="absolute bottom-3 left-3 rounded-full bg-ink/85 px-3 py-1 text-[0.75rem] font-medium text-on-ink">
-              {price === undefined ? t('No se ofrece en este período', 'Não oferecido neste período') : t('Reservado en este período', 'Reservado neste período')}
+              {price === undefined ? t('No se ofrece en este período', 'Não oferecido neste período') : t('Alquilado en este período', 'Alugado neste período')}
             </span>
           )}
         </div>
@@ -130,7 +130,7 @@ export function UnitCard({ u, period, highlight, onHover }: { u: Unit; period?: 
             <p className="flex flex-wrap items-baseline gap-x-2">
               <span className="f-num text-[1.125rem] font-semibold">{usd(price, lang)}</span>
               <span className="text-[0.8125rem] text-mute">
-                {PERIOD_BY_ID[period].short[lang]} · + {Math.round(GUEST_FEE_RATE * 100)}% {t('tarifa', 'taxa')}
+                {PERIOD_BY_ID[period].name[lang]}
               </span>
             </p>
           ) : (
@@ -201,7 +201,7 @@ export function PeriodSelector({
                       ? !offered
                         ? t('No disponible', 'Indisponível')
                         : !free
-                          ? t('Reservado', 'Reservado')
+                          ? t('Alquilado', 'Alugado')
                           : usd(price!, lang)
                       : id === 'temporada'
                         ? t('dic – abr', 'dez – abr')
@@ -250,34 +250,22 @@ function Option({ name, checked, disabled, onSelect, title, sub, strike, ink }: 
   )
 }
 
-export function PriceBreakdown({ net, periodId, className }: { net: number; periodId: PeriodId; className?: string }) {
+/** Price of the chosen period. The advertiser sets it; EVP adds no fee and takes no commission. */
+export function PeriodPrice({ price, periodId, className }: { price: number; periodId: PeriodId; className?: string }) {
   const { t, lang } = useLang()
-  const { fee, total } = breakdown(net)
   return (
     <div className={cx('flex flex-col gap-3', className)}>
-    <dl className="flex flex-col gap-2.5 text-[0.9375rem]">
-      <div className="flex justify-between gap-4">
-        <dt>{t('Alquiler', 'Aluguel')} · {PERIOD_BY_ID[periodId].name[lang]}</dt>
-        <dd className="f-num shrink-0">{usd(net, lang)}</dd>
-      </div>
-      <div className="flex justify-between gap-4">
+      <dl className="flex items-baseline justify-between gap-4 border-t border-line pt-4">
         <dt className="flex flex-col">
-          <span>{t('Tarifa de Gestión Digital y Garantía de Reserva VIP', 'Taxa de Gestão Digital e Garantia de Reserva VIP')}</span>
-          <span className="text-[0.8125rem] text-mute">
-            {Math.round(GUEST_FEE_RATE * 100)}% · {t('contrato, custodia del pago y soporte local', 'contrato, custódia do pagamento e suporte local')}
-          </span>
+          <span className="font-semibold">{PERIOD_BY_ID[periodId].name[lang]}</span>
+          <span className="text-[0.8125rem] text-mute">{t('Precio fijado por el propietario', 'Preço definido pelo proprietário')}</span>
         </dt>
-        <dd className="f-num shrink-0">{usd(fee, lang)}</dd>
-      </div>
-      <div className="mt-1 flex justify-between gap-4 border-t border-line pt-3 text-[1.0625rem] font-semibold">
-        <dt>{t('Total', 'Total')}</dt>
-        <dd className="f-num">{usd(total, lang)}</dd>
-      </div>
-    </dl>
+        <dd className="f-num shrink-0 text-[1.25rem] font-semibold">{usd(price, lang)}</dd>
+      </dl>
       <p className="text-[0.8125rem] text-mute">
         {t(
-          'El propietario recibe el 100% del alquiler. EVP retiene el pago en custodia hasta 24–48 h después de tu check-in.',
-          'O proprietário recebe 100% do aluguel. A EVP mantém o pagamento em custódia até 24–48 h após o seu check-in.',
+          'Sin comisiones ni cargos de EVP. El contrato y el pago se acuerdan directamente con el propietario.',
+          'Sem comissões nem taxas da EVP. O contrato e o pagamento são acertados diretamente com o proprietário.',
         )}
       </p>
     </div>

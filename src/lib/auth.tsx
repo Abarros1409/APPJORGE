@@ -19,10 +19,14 @@ export type User = {
   name: string
   phone?: string
   roles: Role[]
-  /** Second factor (SMS / authenticator). Mandatory for owners before payouts. */
+  /**
+   * Second factor (SMS / authenticator). Mandatory for owners: it protects the
+   * contact shown on their listings from being swapped by an attacker.
+   */
   mfa: boolean
   createdAt: string
-  payout?: { bank: string; masked: string; holdUntil?: string }
+  /** Phone / WhatsApp that verified interested tenants see on the owner's listings. */
+  contact?: { phone: string; whatsapp: boolean; changedAt?: string }
 }
 
 export type Session = {
@@ -48,7 +52,7 @@ export const SESSION_ABSOLUTE_MS = 12 * 3_600_000
 export const SESSION_IDLE_MS = 30 * 60_000
 export const STEP_UP_VALID_MS = 5 * 60_000
 
-const USERS_KEY = 'evp:users:v1'
+const USERS_KEY = 'evp:users:v2'
 const SESSIONS_KEY = 'evp:sessions:v1'
 const CURRENT_KEY = 'evp:session:v1'
 const LOCKS_KEY = 'evp:locks:v1'
@@ -62,7 +66,7 @@ const SEED_USERS: User[] = [
     roles: ['guest', 'owner'],
     mfa: true,
     createdAt: '2026-08-20T12:00:00.000Z',
-    payout: { bank: 'BROU', masked: '•••• 4821' },
+    contact: { phone: '+598 99 555 021', whatsapp: true },
   },
 ]
 const SEED_SESSIONS: Session[] = [
@@ -134,13 +138,13 @@ type Ctx = {
   logout: () => void
   logoutEverywhere: () => void
   revokeSession: (id: string) => void
-  /** Re-verification for sensitive actions (payout account, email). */
+  /** Re-verification for sensitive actions (listing contact, email, account deletion). */
   stepUpFresh: () => boolean
   requestStepUp: () => CodeResult
   verifyStepUp: (code: string) => VerifyResult
   requestPhone: (phone: string) => CodeResult
   verifyPhone: (code: string) => VerifyResult
-  updateUser: (patch: Partial<Pick<User, 'name' | 'payout'>>) => void
+  updateUser: (patch: Partial<Pick<User, 'name' | 'contact'>>) => void
   addRole: (r: Role) => void
   deleteAccount: () => void
   notify: (to: string, subject: string, channel?: 'email' | 'sms') => void
@@ -329,7 +333,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [check, challenge, user],
   )
 
-  const updateUser = useCallback((patch: Partial<Pick<User, 'name' | 'payout'>>) => setUsers((all) => all.map((u) => (u.id === user?.id ? { ...u, ...patch } : u))), [user])
+  const updateUser = useCallback((patch: Partial<Pick<User, 'name' | 'contact'>>) => setUsers((all) => all.map((u) => (u.id === user?.id ? { ...u, ...patch } : u))), [user])
   const addRole = useCallback((r: Role) => setUsers((all) => all.map((u) => (u.id === user?.id && !u.roles.includes(r) ? { ...u, roles: [...u.roles, r] } : u))), [user])
   const deleteAccount = useCallback(() => {
     if (!user) return

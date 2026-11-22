@@ -1,3 +1,5 @@
+> **Actualización 12/11/2026:** EVP pasa a ser una plataforma de promoción (no inmobiliaria), sin comisiones ni pagos en custodia, con contacto directo entre interesado y propietario. Reemplaza §2, §3 (contratación), §5 y §8 de este documento. Ver [`actualizacion_modelo_2026-11.md`](actualizacion_modelo_2026-11.md).
+
 # CONTEXTO MAESTRO DEL PROYECTO: EVP (Edificios VIP Punta del Este)
 
 ## 1. VISIÓN GENERAL Y PROPUESTA DE VALOR

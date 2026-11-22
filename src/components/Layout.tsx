@@ -96,7 +96,7 @@ function AccountMenu() {
         <div id="account-menu" className="absolute top-[calc(100%+0.75rem)] right-0 w-64 rounded-[16px] bg-bg p-2 text-ink shadow-[var(--shadow-ambient)] ring-1 ring-line">
           <p className="truncate px-3 pt-2 pb-3 text-[0.8125rem] text-mute">{user.email}</p>
           <Link to="/cuenta" className={item}>{t('Mi cuenta', 'Minha conta')}</Link>
-          <Link to="/cuenta#reservas" className={item}>{t('Mis reservas', 'Minhas reservas')}</Link>
+          <Link to="/cuenta#consultas" className={item}>{t('Mis consultas', 'Minhas consultas')}</Link>
           {isOwner(user) && <Link to="/panel" className={item}>{t('Panel de propietario', 'Painel de proprietário')}</Link>}
           <Link to="/cuenta#seguridad" className={item}>{t('Seguridad', 'Segurança')}</Link>
           <button type="button" onClick={() => { logout(); navigate('/') }} className={cx(item, 'w-full border-t border-line text-left')}>
@@ -242,7 +242,7 @@ function Footer() {
           <ul className="flex flex-col gap-2.5 text-[0.9375rem]">
             <li><Link className="hover:text-ocaso" to="/buscar">{t('Explorar unidades', 'Explorar unidades')}</Link></li>
             <li><Link className="hover:text-ocaso" to="/edificios">{t('Edificios certificados', 'Edifícios certificados')}</Link></li>
-            <li><Link className="hover:text-ocaso" to="/#como-funciona">{t('Pago en custodia', 'Pagamento em custódia')}</Link></li>
+            <li><Link className="hover:text-ocaso" to="/#como-funciona">{t('Cómo funciona', 'Como funciona')}</Link></li>
           </ul>
         </div>
         <div>
@@ -265,8 +265,8 @@ function Footer() {
         <div className="shell flex flex-col gap-3 py-6 text-[0.8125rem] text-on-ink-mute md:flex-row md:items-center md:justify-between">
           <p>
             {t(
-              'Prototipo funcional. Los edificios, las unidades y los pagos son de demostración: no se realizan cobros reales.',
-              'Protótipo funcional. Os edifícios, as unidades e os pagamentos são de demonstração: nenhuma cobrança real é feita.',
+              'EVP es una plataforma de promoción: no es inmobiliaria, no intermedia en los alquileres ni cobra comisión. Prototipo funcional con edificios y unidades de demostración.',
+              'A EVP é uma plataforma de divulgação: não é imobiliária, não intermedeia os aluguéis nem cobra comissão. Protótipo funcional com edifícios e unidades de demonstração.',
             )}
           </p>
           <button type="button" onClick={resetDemo} className="self-start rounded-full px-3 py-1.5 ring-1 ring-on-ink-line ring-inset hover:text-on-ink md:self-auto">

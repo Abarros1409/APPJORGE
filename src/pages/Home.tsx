@@ -1,4 +1,4 @@
-import { ArrowRight, Check, X, FileText, ShieldCheck, Buildings as BuildingsIcon } from '@phosphor-icons/react'
+import { ArrowRight, Check, X, ChatCircleText, Handshake, SealCheck, Buildings as BuildingsIcon } from '@phosphor-icons/react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
@@ -9,7 +9,7 @@ import { MapPunta } from '../components/MapPunta'
 import { BuildingVisual } from '../components/units'
 import { ButtonLink, Seal, Stars, cx } from '../components/ui'
 import { BUILDINGS, BUILDING_BY_ID, ZONES, ZONE_NAME } from '../lib/data'
-import { breakdown, usd } from '../lib/format'
+import { usd } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { useStore } from '../lib/store'
 
@@ -58,8 +58,8 @@ function Hero() {
         </h1>
         <p data-intro className="max-w-[52ch] text-[1.0625rem] text-on-ink-mute md:text-[1.1875rem]">
           {t(
-            'Alquilá por quincena, mes o temporada en los edificios de 4 y 5 estrellas de Punta del Este que EVP verificó uno por uno. Con contrato digital y pago en custodia.',
-            'Alugue por quinzena, mês ou temporada nos edifícios 4 e 5 estrelas de Punta del Este que a EVP verificou um a um. Com contrato digital e pagamento em custódia.',
+            'Alquilá por quincena, mes o temporada en los edificios de 4 y 5 estrellas de Punta del Este que EVP verificó uno por uno. Consultás directo al propietario, sin comisiones.',
+            'Alugue por quinzena, mês ou temporada nos edifícios 4 e 5 estrelas de Punta del Este que a EVP verificou um a um. Você consulta direto o proprietário, sem comissões.',
           )}
         </p>
       </div>
@@ -150,7 +150,7 @@ function HowItWorks() {
     refs.current.forEach((r) => r && io.observe(r))
     return () => io.disconnect()
   }, [])
-  const b = breakdown(3000)
+  const example = 3000
   const steps = [
     {
       icon: <BuildingsIcon size={22} weight="light" />,
@@ -161,19 +161,19 @@ function HowItWorks() {
       ),
     },
     {
-      icon: <FileText size={22} weight="light" />,
-      title: t('Firmá el contrato digital', 'Assine o contrato digital'),
+      icon: <ChatCircleText size={22} weight="light" />,
+      title: t('Consultá directo al propietario', 'Consulte direto o proprietário'),
       body: t(
-        'Generamos el contrato de arrendamiento de temporada conforme a la legislación uruguaya. Lo firmás en pantalla junto con el reglamento de copropiedad del edificio.',
-        'Geramos o contrato de locação por temporada conforme a legislação uruguaia. Você assina na tela junto com o regulamento do condomínio.',
+        'Tu consulta le llega al dueño o a su inmobiliaria, que te responde por email o WhatsApp. Solo pedimos verificar tu email, así cada consulta es real.',
+        'Sua consulta chega ao dono ou à imobiliária, que responde por e-mail ou WhatsApp. Só pedimos que você verifique o e-mail, assim cada consulta é real.',
       ),
     },
     {
-      icon: <ShieldCheck size={22} weight="light" />,
-      title: t('Pagá en custodia', 'Pague em custódia'),
+      icon: <Handshake size={22} weight="light" />,
+      title: t('Cerrá el trato sin comisiones', 'Feche o acordo sem comissões'),
       body: t(
-        'Pagás con tarjeta internacional o con PIX. EVP retiene el dinero y se lo transfiere al propietario recién 24–48 h después de un check-in exitoso.',
-        'Pague com cartão internacional ou PIX. A EVP retém o valor e só o transfere ao proprietário 24–48 h após um check-in bem-sucedido.',
+        'El precio es el que fija el propietario: EVP no cobra comisión ni cargos. El contrato de temporada y el pago se acuerdan directamente entre ustedes.',
+        'O preço é o definido pelo proprietário: a EVP não cobra comissão nem taxas. O contrato de temporada e o pagamento são acertados diretamente entre vocês.',
       ),
     },
   ]
@@ -198,30 +198,25 @@ function HowItWorks() {
                 </div>
               </div>
               <div className={cx('absolute inset-0 flex items-center justify-center p-10 transition-opacity duration-700 ease-[var(--ease-out)]', step === 1 ? 'opacity-100' : 'opacity-0')}>
-                <div className="w-full max-w-sm rotate-[-2deg] rounded-[14px] bg-white p-6 text-ink shadow-[var(--shadow-ambient)]">
-                  <p className="f-seal text-mute">{t('Contrato de arrendamiento de temporada', 'Contrato de locação por temporada')}</p>
-                  <div className="mt-4 flex flex-col gap-2">
-                    {[90, 100, 76, 96, 60].map((w, i) => (
-                      <span key={i} className="h-2 rounded-full bg-mist" style={{ width: `${w}%` }} />
-                    ))}
-                  </div>
-                  <svg viewBox="0 0 200 50" className="mt-6 h-12 w-40 text-marine-strong">
-                    <path d="M5 35 C 25 5, 35 45, 55 25 S 85 10, 95 30 S 130 40, 150 15 S 180 30, 195 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                  </svg>
-                  <p className="mt-1 border-t border-line pt-2 text-[0.75rem] text-mute">{t('Firma digital del huésped', 'Assinatura digital do hóspede')}</p>
+                <div className="flex w-full max-w-sm flex-col gap-3 rounded-[14px] bg-white p-6 text-ink shadow-[var(--shadow-ambient)]">
+                  <p className="text-[0.8125rem] font-semibold text-mute">{t('Consulta · Altamar Brava 2101', 'Consulta · Altamar Brava 2101')}</p>
+                  <p className="self-start rounded-[14px] rounded-tl-[4px] bg-mist px-4 py-3 text-[0.9375rem]">
+                    {t('Hola, somos 5 y nos interesa la 1ª quincena de enero. ¿Está disponible?', 'Olá, somos 5 e temos interesse na 1ª quinzena de janeiro. Está disponível?')}
+                  </p>
+                  <p className="flex items-center gap-2 text-[0.8125rem] text-ok">
+                    <SealCheck size={16} weight="fill" />
+                    {t('Email verificado', 'E-mail verificado')}
+                  </p>
                 </div>
               </div>
               <div className={cx('absolute inset-0 flex items-center justify-center p-10 transition-opacity duration-700 ease-[var(--ease-out)]', step === 2 ? 'opacity-100' : 'opacity-0')}>
-                <div className="w-full max-w-sm rounded-[14px] bg-white p-6 text-ink shadow-[var(--shadow-ambient)]">
-                  <p className="text-[0.8125rem] font-semibold text-mute">{t('Ejemplo · 1ª quincena de enero', 'Exemplo · 1ª quinzena de janeiro')}</p>
-                  <dl className="f-num mt-4 flex flex-col gap-2 text-[0.9375rem]">
-                    <div className="flex justify-between"><dt>{t('Alquiler neto', 'Aluguel líquido')}</dt><dd>{usd(b.net, lang)}</dd></div>
-                    <div className="flex justify-between"><dt>{t('Tarifa EVP 5%', 'Taxa EVP 5%')}</dt><dd>{usd(b.fee, lang)}</dd></div>
-                    <div className="flex justify-between border-t border-line pt-2 font-semibold"><dt>Total</dt><dd>{usd(b.total, lang)}</dd></div>
-                  </dl>
-                  <div className="mt-5 flex items-center gap-3 rounded-[10px] bg-ok-soft p-3 text-[0.8125rem]">
-                    <ShieldCheck size={20} className="text-ok" weight="fill" />
-                    {t('En custodia hasta 48 h después del check-in', 'Em custódia até 48 h após o check-in')}
+                <div className="flex w-full max-w-sm flex-col gap-3 rounded-[14px] bg-white p-6 text-ink shadow-[var(--shadow-ambient)]">
+                  <p className="self-end rounded-[14px] rounded-tr-[4px] bg-ink px-4 py-3 text-[0.9375rem] text-on-ink">
+                    {t(`¡Hola! Sí, está libre. Son ${usd(example, lang)} la quincena. ¿Les paso el contrato?`, `Olá! Sim, está livre. São ${usd(example, lang)} a quinzena. Posso enviar o contrato?`)}
+                  </p>
+                  <div className="mt-1 flex items-center gap-3 rounded-[10px] bg-ok-soft p-3 text-[0.8125rem]">
+                    <Handshake size={20} className="text-ok" weight="fill" />
+                    {t('Trato directo con el propietario. Sin comisiones.', 'Acordo direto com o proprietário. Sem comissões.')}
                   </div>
                 </div>
               </div>
@@ -295,8 +290,8 @@ function Compare() {
     [t('Edificios', 'Edifícios'), t('Solo torres de 4 y 5 estrellas verificadas por EVP', 'Só torres 4 e 5 estrelas verificadas pela EVP'), t('Cualquier inmueble, sin verificar', 'Qualquer imóvel, sem verificação')],
     [t('Información técnica', 'Informação técnica'), t('Ficha madre certificada: amenities, seguridad, arquitectos', 'Ficha técnica certificada: amenities, segurança, arquitetos'), t('Lo que el anunciante quiera contar', 'O que o anunciante quiser contar')],
     [t('Modalidad', 'Modalidade'), t('Quincena, mes o temporada, con contrato formal', 'Quinzena, mês ou temporada, com contrato formal'), t('Por noche, sin contrato de temporada', 'Por noite, sem contrato de temporada')],
-    [t('Tu dinero', 'Seu dinheiro'), t('En custodia hasta después del check-in', 'Em custódia até depois do check-in'), t('Transferencias directas o depósitos previos', 'Transferências diretas ou depósitos prévios')],
-    [t('Precio', 'Preço'), t('Neto del propietario + 5% de gestión, siempre desglosado', 'Líquido do proprietário + 5% de gestão, sempre detalhado'), t('Cargos que aparecen al final', 'Taxas que aparecem no final')],
+    [t('Trato', 'Contato'), t('Directo con el propietario, verificado como titular', 'Direto com o proprietário, verificado como titular'), t('Anunciantes e intermediarios sin verificar', 'Anunciantes e intermediários sem verificação')],
+    [t('Precio', 'Preço'), t('El que fija el dueño: sin comisiones ni cargos de la plataforma', 'O definido pelo dono: sem comissões nem taxas da plataforma'), t('Cargos de servicio que aparecen al final', 'Taxas de serviço que aparecem no final')],
   ]
   return (
     <section className="bg-mist py-24 md:py-32" aria-labelledby="compare-title">
@@ -347,14 +342,14 @@ function Audiences() {
           <ArchScene shape="stepped" time="dusk" seed={53} className="absolute inset-0 -z-10 size-full opacity-55" />
           <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,oklch(0.205_0.035_240)_25%,oklch(0.205_0.035_240/0.3))]" />
           <div className="flex max-w-[34rem] flex-col gap-6">
-            <p className="f-num text-[0.9375rem] font-semibold text-ocaso">{t('0% de comisión el primer año', '0% de comissão no primeiro ano')}</p>
+            <p className="f-num text-[0.9375rem] font-semibold text-ocaso">{t('Gratis el primer año', 'Grátis no primeiro ano')}</p>
             <h2 className="f-h2 text-[clamp(1.9rem,3.4vw,3rem)]">
               {t('¿Tenés una unidad en una torre VIP? Publicala en menos de 3 minutos.', 'Tem uma unidade em uma torre VIP? Publique em menos de 3 minutos.')}
             </h2>
             <p className="text-[1.0625rem] text-on-ink-mute">
               {t(
-                'La ficha del edificio ya la hicimos nosotros. Vos cargás piso, distribución, tarifas y fotos. Cobrás el 100% del alquiler y tu inmueble nunca aparece en canales masivos.',
-                'A ficha do edifício nós já fizemos. Você cadastra andar, distribuição, tarifas e fotos. Recebe 100% do aluguel e seu imóvel nunca aparece em canais de massa.',
+                'La ficha del edificio ya la hicimos nosotros. Vos cargás piso, distribución, tarifas y fotos. Los interesados te consultan directo, sin comisiones, y tu inmueble nunca aparece en canales masivos.',
+                'A ficha do edifício nós já fizemos. Você cadastra andar, distribuição, tarifas e fotos. Os interessados consultam você direto, sem comissões, e seu imóvel nunca aparece em canais de massa.',
               )}
             </p>
             <div className="flex flex-wrap gap-3">
@@ -372,8 +367,8 @@ function Audiences() {
             <h2 className="f-h3 text-[1.5rem]">{t('Administraciones y portería', 'Administrações e portaria')}</h2>
             <p className="text-mute">
               {t(
-                'Un servicio para la comunidad del edificio: huéspedes verificados, contrato firmado y reglamento aceptado antes de que lleguen.',
-                'Um serviço para a comunidade do edifício: hóspedes verificados, contrato assinado e regulamento aceito antes da chegada.',
+                'Una ficha profesional del edificio, solo unidades de copropietarios verificados y estadías por quincena o mes, sin rotación diaria.',
+                'Uma ficha profissional do edifício, só unidades de condôminos verificados e estadias por quinzena ou mês, sem rotatividade diária.',
               )}
             </p>
           </div>

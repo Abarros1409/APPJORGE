@@ -2,104 +2,95 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { UNITS, type Unit } from './data'
 import type { PeriodId } from './periods'
 
-export type PaymentMethod = 'card' | 'pix'
-
-export type Booking = {
-  code: string
+/**
+ * Direct inquiry from an interested tenant to the advertiser (owner or agency).
+ * EVP does not intermediate: no payment, contract or commission goes through
+ * the platform (see docs/actualizacion_modelo_2026-11.md).
+ */
+export type Inquiry = {
+  id: string
   unitId: string
-  period: PeriodId
+  period: PeriodId | null
   createdAt: string
   guest: {
     name: string
     email: string
     phone: string
-    doc: string
     country: 'AR' | 'BR' | 'UY' | 'OTRO'
     guests: number
     pet: boolean
   }
-  net: number
-  fee: number
-  total: number
-  method: PaymentMethod
-  methodDetail: string
-  signature: string
-  signedAt: string
-  /** Set when the guest completes the digital inventory at check-in. */
-  checkin?: { at: string; notes: string }
-  /** Escrow release: 24–48 h after a successful check-in. */
-  releaseAt?: string
+  message: string
+  status: InquiryStatus
 }
 
-export type BookingStatus = 'custodia' | 'checkin' | 'liberado'
-
-export function bookingStatus(b: Booking, now = Date.now()): BookingStatus {
-  if (!b.checkin) return 'custodia'
-  if (b.releaseAt && Date.parse(b.releaseAt) <= now) return 'liberado'
-  return 'checkin'
-}
+export type InquiryStatus = 'nueva' | 'respondida' | 'alquilado' | 'descartada'
 
 export type Lead = { id: string; building: string; name: string; role: string; email: string; phone: string; message: string; createdAt: string }
 
+export type Report = { id: string; unitId: string; reason: string; createdAt: string }
+
 type State = {
-  bookings: Booking[]
+  inquiries: Inquiry[]
+  /** Periods the advertiser marked as already rented, per unit. */
+  rented: Record<string, PeriodId[]>
   ownerUnits: Unit[]
   leads: Lead[]
+  reports: Report[]
   favorites: string[]
 }
 
-const KEY = 'evp:state:v1'
+const KEY = 'evp:state:v2'
 
 const now = Date.now()
+const ago = (days: number) => new Date(now - days * 86_400_000).toISOString()
 const SEED_STATE: State = {
   favorites: [],
   leads: [],
+  reports: [],
   ownerUnits: [],
-  bookings: [
+  rented: {},
+  inquiries: [
     {
-      code: 'EVP-K7Q2MX',
+      id: 'C-K7Q2MX',
       unitId: 'u01',
       period: 'ene1',
-      createdAt: new Date(now - 34 * 86_400_000).toISOString(),
-      guest: { name: 'Martín Echeverría', email: 'martin@ejemplo.com', phone: '+54 9 11 5555 0101', doc: 'AR 30.111.222', country: 'AR', guests: 5, pet: false },
-      net: 4200,
-      fee: 210,
-      total: 4410,
-      method: 'card',
-      methodDetail: 'Visa •••• 4242',
-      signature: '',
-      signedAt: new Date(now - 34 * 86_400_000).toISOString(),
+      createdAt: ago(34),
+      guest: { name: 'Martín Echeverría', email: 'martin@ejemplo.com', phone: '+54 9 11 5555 0101', country: 'AR', guests: 5, pet: false },
+      message: 'Hola, somos dos adultos y tres chicos. ¿El servicio de playa está incluido en la quincena?',
+      status: 'alquilado',
     },
     {
-      code: 'EVP-B3RN8T',
+      id: 'C-B3RN8T',
       unitId: 'u05',
+      period: 'feb2',
+      createdAt: ago(3),
+      guest: { name: 'Camila Duarte', email: 'camila@exemplo.com.br', phone: '+55 11 95555 0202', country: 'BR', guests: 4, pet: true },
+      message: 'Olá! Viajamos com um cachorro pequeno. A unidade aceita? Chegaríamos de carro desde São Paulo.',
+      status: 'nueva',
+    },
+    {
+      id: 'C-H9WD4P',
+      unitId: 'u01',
+      period: 'feb',
+      createdAt: ago(1),
+      guest: { name: 'Rafael Montes', email: 'rafael@exemplo.com.br', phone: '+55 51 95555 0303', country: 'BR', guests: 6, pet: false },
+      message: 'Bom dia, temos interesse no mês de fevereiro completo. É possível fazer um preço para o mês?',
+      status: 'nueva',
+    },
+    {
+      id: 'C-Q4ZT7L',
+      unitId: 'u12',
       period: 'ene2',
-      createdAt: new Date(now - 12 * 86_400_000).toISOString(),
-      guest: { name: 'Camila Duarte', email: 'camila@exemplo.com.br', phone: '+55 11 95555 0202', doc: 'BR 123.456.789-00', country: 'BR', guests: 4, pet: true },
-      net: 3550,
-      fee: 178,
-      total: 3728,
-      method: 'pix',
-      methodDetail: 'PIX · dLocal',
-      signature: '',
-      signedAt: new Date(now - 12 * 86_400_000).toISOString(),
-    },
-    {
-      code: 'EVP-H9WD4P',
-      unitId: 'u05',
-      period: 'feb1',
-      createdAt: new Date(now - 5 * 86_400_000).toISOString(),
-      guest: { name: 'Rafael Montes', email: 'rafael@exemplo.com.br', phone: '+55 51 95555 0303', doc: 'BR 987.654.321-00', country: 'BR', guests: 6, pet: false },
-      net: 3350,
-      fee: 168,
-      total: 3518,
-      method: 'card',
-      methodDetail: 'Mastercard •••• 5100',
-      signature: '',
-      signedAt: new Date(now - 5 * 86_400_000).toISOString(),
+      createdAt: ago(6),
+      guest: { name: 'Lucía Ferreira', email: 'lucia@ejemplo.com', phone: '+54 9 11 5555 0404', country: 'AR', guests: 3, pet: false },
+      message: '¿La terraza tiene parrillero? Buscamos algo tranquilo para la segunda quincena.',
+      status: 'respondida',
     },
   ],
 }
+
+const baseBooked = (s: State, unitId: string): PeriodId[] => [...UNITS, ...s.ownerUnits].find((u) => u.id === unitId)?.booked ?? []
 
 function load(): State {
   try {
@@ -122,9 +113,11 @@ type Ctx = State & {
   submitTitleDoc: (unitId: string, fileName: string) => void
   approveUnit: (unitId: string) => void
   unitById: (id: string) => Unit | undefined
-  addBooking: (b: Booking) => void
-  completeCheckin: (code: string, notes: string) => void
-  releaseNow: (code: string) => void
+  addInquiry: (q: Inquiry) => void
+  setInquiryStatus: (id: string, status: InquiryStatus) => void
+  /** Owner marks/unmarks a period as already rented. */
+  toggleRented: (unitId: string, period: PeriodId) => void
+  reportListing: (unitId: string, reason: string) => void
   publishUnit: (u: Unit) => void
   addLead: (l: Lead) => void
   toggleFavorite: (unitId: string) => void
@@ -150,10 +143,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const allUnits = useMemo(() => {
     const all = [...UNITS, ...state.ownerUnits]
     return all.map((u) => {
-      const extra = state.bookings.filter((b) => b.unitId === u.id).map((b) => b.period)
-      return extra.length ? { ...u, booked: Array.from(new Set([...u.booked, ...extra])) } : u
+      // Once the advertiser edits availability, their list replaces the seed data.
+      const own = state.rented[u.id]
+      return own ? { ...u, booked: own } : u
     })
-  }, [state.ownerUnits, state.bookings])
+  }, [state.ownerUnits, state.rented])
   const units = useMemo(() => allUnits.filter((u) => !u.verification), [allUnits])
 
   const unitById = useCallback((id: string) => allUnits.find((u) => u.id === id), [allUnits])
@@ -168,31 +162,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   )
 
-  const addBooking = useCallback((b: Booking) => setState((s) => ({ ...s, bookings: [b, ...s.bookings] })), [])
+  const addInquiry = useCallback((q: Inquiry) => setState((s) => ({ ...s, inquiries: [q, ...s.inquiries] })), [])
 
-  const completeCheckin = useCallback(
-    (code: string, notes: string) =>
-      setState((s) => ({
-        ...s,
-        bookings: s.bookings.map((b) =>
-          b.code === code
-            ? { ...b, checkin: { at: new Date().toISOString(), notes }, releaseAt: new Date(Date.now() + 36 * 3_600_000).toISOString() }
-            : b,
-        ),
-      })),
+  const setInquiryStatus = useCallback(
+    (id: string, status: InquiryStatus) =>
+      setState((s) => {
+        const q = s.inquiries.find((x) => x.id === id)
+        const rented = { ...s.rented }
+        // Closing a deal blocks that period in the listing.
+        if (q && status === 'alquilado' && q.period) rented[q.unitId] = Array.from(new Set([...(rented[q.unitId] ?? baseBooked(s, q.unitId)), q.period]))
+        return { ...s, rented, inquiries: s.inquiries.map((x) => (x.id === id ? { ...x, status } : x)) }
+      }),
     [],
   )
 
-  const releaseNow = useCallback(
-    (code: string) =>
-      setState((s) => ({
-        ...s,
-        bookings: s.bookings.map((b) =>
-          b.code === code
-            ? { ...b, checkin: b.checkin ?? { at: new Date().toISOString(), notes: '' }, releaseAt: new Date(Date.now() - 1000).toISOString() }
-            : b,
-        ),
-      })),
+  const toggleRented = useCallback(
+    (unitId: string, period: PeriodId) =>
+      setState((s) => {
+        const cur = s.rented[unitId] ?? baseBooked(s, unitId)
+        return { ...s, rented: { ...s.rented, [unitId]: cur.includes(period) ? cur.filter((p) => p !== period) : [...cur, period] } }
+      }),
+    [],
+  )
+
+  const reportListing = useCallback(
+    (unitId: string, reason: string) => setState((s) => ({ ...s, reports: [{ id: crypto.randomUUID(), unitId, reason, createdAt: new Date().toISOString() }, ...s.reports] })),
     [],
   )
 
@@ -206,8 +200,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const resetDemo = useCallback(() => setState(SEED_STATE), [])
 
   const value = useMemo<Ctx>(
-    () => ({ ...state, units, allUnits, submitTitleDoc, approveUnit, unitById, addBooking, completeCheckin, releaseNow, publishUnit, addLead, toggleFavorite, storageWarning, resetDemo }),
-    [state, units, allUnits, submitTitleDoc, approveUnit, unitById, addBooking, completeCheckin, releaseNow, publishUnit, addLead, toggleFavorite, storageWarning, resetDemo],
+    () => ({ ...state, units, allUnits, submitTitleDoc, approveUnit, unitById, addInquiry, setInquiryStatus, toggleRented, reportListing, publishUnit, addLead, toggleFavorite, storageWarning, resetDemo }),
+    [state, units, allUnits, submitTitleDoc, approveUnit, unitById, addInquiry, setInquiryStatus, toggleRented, reportListing, publishUnit, addLead, toggleFavorite, storageWarning, resetDemo],
   )
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }

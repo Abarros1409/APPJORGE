@@ -11,9 +11,7 @@ import UnitPage from './pages/UnitPage'
 import { BuildingPage, BuildingsIndex } from './pages/Buildings'
 import NotFound from './pages/NotFound'
 
-const Checkout = lazy(() => import('./pages/Checkout'))
-const BookingPage = lazy(() => import('./pages/BookingPage'))
-const ContractPage = lazy(() => import('./pages/ContractPage'))
+const Inquiry = lazy(() => import('./pages/Inquiry'))
 const Owners = lazy(() => import('./pages/Owners'))
 const Publish = lazy(() => import('./pages/Publish'))
 const Panel = lazy(() => import('./pages/Panel'))
@@ -33,8 +31,7 @@ const router = createBrowserRouter([
       { path: '/edificios', element: <BuildingsIndex /> },
       { path: '/edificios/:id', element: <BuildingPage /> },
       { path: '/unidades/:id', element: <UnitPage /> },
-      { path: '/reservar/:id', element: wrap(<Checkout />) },
-      { path: '/reserva/:code', element: wrap(<RequireAuth><BookingPage /></RequireAuth>) },
+      { path: '/consultar/:id', element: wrap(<Inquiry />) },
       { path: '/propietarios', element: wrap(<Owners />) },
       { path: '/propietarios/publicar', element: wrap(<RequireAuth><Publish /></RequireAuth>) },
       { path: '/panel', element: wrap(<RequireAuth role="owner"><Panel /></RequireAuth>) },
@@ -44,7 +41,6 @@ const router = createBrowserRouter([
       { path: '*', element: <NotFound /> },
     ],
   },
-  { path: '/contrato/:code', element: wrap(<RequireAuth><ContractPage /></RequireAuth>) },
 ])
 
 export function App() {

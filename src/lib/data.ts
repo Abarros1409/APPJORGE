@@ -22,31 +22,75 @@ export const ZONE_NAME = Object.fromEntries(ZONES.map((z) => [z.id, z.name])) as
 export type AmenityId =
   | 'pool_in'
   | 'pool_out'
+  | 'jacuzzi'
   | 'spa'
-  | 'gym'
-  | 'beach'
-  | 'courts'
-  | 'cinema'
-  | 'security'
   | 'sauna'
+  | 'solarium'
+  | 'gym'
+  | 'courts'
+  | 'padel'
+  | 'squash'
+  | 'beach'
+  | 'beach_access'
+  | 'grill'
+  | 'garden'
   | 'kids'
+  | 'playground'
+  | 'games'
+  | 'cinema'
+  | 'party'
+  | 'restaurant'
   | 'concierge'
+  | 'housekeeping'
+  | 'laundry'
   | 'cowork'
+  | 'wifi'
+  | 'security'
+  | 'generator'
+  | 'guest_parking'
+  | 'ev_charger'
 
 export const AMENITIES: Record<AmenityId, L10n> = {
   pool_in: { es: 'Piscina climatizada interior', pt: 'Piscina aquecida interna' },
   pool_out: { es: 'Piscina exterior', pt: 'Piscina externa' },
+  jacuzzi: { es: 'Jacuzzi', pt: 'Jacuzzi' },
   spa: { es: 'Spa y masajes', pt: 'Spa e massagens' },
-  gym: { es: 'Gimnasio equipado', pt: 'Academia equipada' },
-  beach: { es: 'Servicio de playa', pt: 'Serviço de praia' },
-  courts: { es: 'Canchas de tenis y pádel', pt: 'Quadras de tênis e padel' },
-  cinema: { es: 'Microcine', pt: 'Microcinema' },
-  security: { es: 'Seguridad 24 h', pt: 'Segurança 24 h' },
   sauna: { es: 'Sauna seco y húmedo', pt: 'Sauna seca e úmida' },
-  kids: { es: 'Kids club', pt: 'Kids club' },
+  solarium: { es: 'Solárium', pt: 'Solário' },
+  gym: { es: 'Gimnasio equipado', pt: 'Academia equipada' },
+  courts: { es: 'Cancha de tenis', pt: 'Quadra de tênis' },
+  padel: { es: 'Cancha de pádel', pt: 'Quadra de padel' },
+  squash: { es: 'Cancha de squash', pt: 'Quadra de squash' },
+  beach: { es: 'Servicio de playa (sombrillas y reposeras)', pt: 'Serviço de praia (guarda-sóis e espreguiçadeiras)' },
+  beach_access: { es: 'Acceso directo a la playa', pt: 'Acesso direto à praia' },
+  grill: { es: 'Parrilleros', pt: 'Churrasqueiras' },
+  garden: { es: 'Parque y jardines', pt: 'Parque e jardins' },
+  kids: { es: 'Kids club con monitores', pt: 'Kids club com monitores' },
+  playground: { es: 'Juegos infantiles', pt: 'Playground' },
+  games: { es: 'Sala de juegos', pt: 'Sala de jogos' },
+  cinema: { es: 'Microcine', pt: 'Microcinema' },
+  party: { es: 'Salón de fiestas', pt: 'Salão de festas' },
+  restaurant: { es: 'Restaurante o bar', pt: 'Restaurante ou bar' },
   concierge: { es: 'Conserjería', pt: 'Concierge' },
+  housekeeping: { es: 'Servicio de limpieza opcional', pt: 'Serviço de limpeza opcional' },
+  laundry: { es: 'Lavandería', pt: 'Lavanderia' },
   cowork: { es: 'Business center', pt: 'Business center' },
+  wifi: { es: 'Wi-Fi en áreas comunes', pt: 'Wi-Fi nas áreas comuns' },
+  security: { es: 'Seguridad 24 h', pt: 'Segurança 24 h' },
+  generator: { es: 'Grupo electrógeno', pt: 'Gerador de energia' },
+  guest_parking: { es: 'Cocheras para visitas', pt: 'Vagas para visitantes' },
+  ev_charger: { es: 'Cargador para autos eléctricos', pt: 'Carregador para carros elétricos' },
 }
+
+/** How the building's amenities are grouped in the "ficha madre". */
+export const AMENITY_GROUPS: { label: L10n; ids: AmenityId[] }[] = [
+  { label: { es: 'Agua y bienestar', pt: 'Água e bem-estar' }, ids: ['pool_in', 'pool_out', 'jacuzzi', 'spa', 'sauna', 'solarium'] },
+  { label: { es: 'Deporte', pt: 'Esporte' }, ids: ['gym', 'courts', 'padel', 'squash'] },
+  { label: { es: 'Playa y aire libre', pt: 'Praia e ar livre' }, ids: ['beach', 'beach_access', 'grill', 'garden'] },
+  { label: { es: 'Familia y entretenimiento', pt: 'Família e lazer' }, ids: ['kids', 'playground', 'games', 'cinema', 'party', 'restaurant'] },
+  { label: { es: 'Servicios', pt: 'Serviços' }, ids: ['concierge', 'housekeeping', 'laundry', 'cowork', 'wifi'] },
+  { label: { es: 'Seguridad e infraestructura', pt: 'Segurança e infraestrutura' }, ids: ['security', 'generator', 'guest_parking', 'ev_charger'] },
+]
 
 export type SceneShape = 'tower' | 'curved' | 'slab' | 'twin' | 'stepped' | 'lowrise'
 export type SceneTime = 'dawn' | 'day' | 'golden' | 'dusk' | 'night'
@@ -66,6 +110,14 @@ export type Building = {
   architects: string
   stars: 4 | 5
   amenities: AmenityId[]
+  /** Walking distance to the sand, in metres (0 = beachfront). */
+  beachMeters: number
+  elevators: number
+  /** Building rules allow pets in units whose owner accepts them. */
+  pets: boolean
+  renovated?: number
+  /** The building's own website, when it has one. */
+  website?: string
   certifiedAt: string
   scene: { shape: SceneShape; time: SceneTime; seed: number }
   tagline: L10n
@@ -86,7 +138,10 @@ export const BUILDINGS: Building[] = [
     units: 128,
     architects: 'Ferrés Lanza Arquitectos',
     stars: 5,
-    amenities: ['pool_in', 'pool_out', 'spa', 'gym', 'beach', 'cinema', 'security', 'sauna', 'concierge'],
+    amenities: ['pool_in', 'pool_out', 'jacuzzi', 'spa', 'sauna', 'solarium', 'gym', 'padel', 'beach', 'grill', 'cinema', 'games', 'concierge', 'housekeeping', 'wifi', 'security', 'generator', 'guest_parking'],
+    beachMeters: 0,
+    elevators: 4,
+    pets: true,
     certifiedAt: '2026-09-12',
     scene: { shape: 'tower', time: 'golden', seed: 11 },
     tagline: { es: 'Treinta y dos pisos frente al Atlántico abierto.', pt: 'Trinta e dois andares de frente para o Atlântico aberto.' },
@@ -108,7 +163,10 @@ export const BUILDINGS: Building[] = [
     units: 96,
     architects: 'Estudio Arocena Rius',
     stars: 5,
-    amenities: ['pool_in', 'pool_out', 'spa', 'gym', 'beach', 'courts', 'kids', 'security', 'concierge'],
+    amenities: ['pool_in', 'pool_out', 'spa', 'sauna', 'gym', 'courts', 'padel', 'beach', 'garden', 'grill', 'kids', 'playground', 'party', 'concierge', 'wifi', 'security', 'generator', 'guest_parking'],
+    beachMeters: 0,
+    elevators: 3,
+    pets: true,
     certifiedAt: '2026-08-30',
     scene: { shape: 'curved', time: 'dusk', seed: 23 },
     tagline: { es: 'Atardeceres sobre la bahía desde cada living.', pt: 'Pores do sol sobre a baía de cada sala.' },
@@ -130,7 +188,11 @@ export const BUILDINGS: Building[] = [
     units: 64,
     architects: 'Bonomi Carrau',
     stars: 4,
-    amenities: ['pool_in', 'gym', 'sauna', 'security', 'concierge', 'cowork'],
+    amenities: ['pool_in', 'sauna', 'solarium', 'gym', 'concierge', 'laundry', 'cowork', 'wifi', 'security', 'generator'],
+    beachMeters: 150,
+    elevators: 2,
+    pets: false,
+    renovated: 2023,
     certifiedAt: '2026-09-04',
     scene: { shape: 'slab', time: 'day', seed: 31 },
     tagline: { es: 'A dos cuadras de Gorlero y del puerto.', pt: 'A duas quadras da Gorlero e do porto.' },
@@ -152,7 +214,10 @@ export const BUILDINGS: Building[] = [
     units: 22,
     architects: 'Taller Mazzini Otero',
     stars: 5,
-    amenities: ['pool_out', 'spa', 'gym', 'beach', 'security', 'concierge'],
+    amenities: ['pool_out', 'jacuzzi', 'spa', 'gym', 'beach', 'beach_access', 'grill', 'garden', 'restaurant', 'concierge', 'housekeeping', 'wifi', 'security', 'ev_charger'],
+    beachMeters: 80,
+    elevators: 1,
+    pets: true,
     certifiedAt: '2026-09-20',
     scene: { shape: 'lowrise', time: 'dawn', seed: 47 },
     tagline: { es: 'Veintidós unidades entre pinos, a 80 m del mar.', pt: 'Vinte e duas unidades entre pinheiros, a 80 m do mar.' },
@@ -174,7 +239,10 @@ export const BUILDINGS: Building[] = [
     units: 18,
     architects: 'Galli Sienra Arquitectos',
     stars: 5,
-    amenities: ['pool_in', 'pool_out', 'spa', 'gym', 'beach', 'cinema', 'security'],
+    amenities: ['pool_in', 'pool_out', 'jacuzzi', 'spa', 'solarium', 'gym', 'beach', 'beach_access', 'grill', 'cinema', 'housekeeping', 'wifi', 'security', 'generator', 'ev_charger'],
+    beachMeters: 0,
+    elevators: 2,
+    pets: true,
     certifiedAt: '2026-10-02',
     scene: { shape: 'stepped', time: 'golden', seed: 53 },
     tagline: { es: 'Terrazas escalonadas sobre los médanos de Bikini.', pt: 'Terraços escalonados sobre as dunas de Bikini.' },
@@ -196,7 +264,10 @@ export const BUILDINGS: Building[] = [
     units: 112,
     architects: 'Ferrés Lanza Arquitectos',
     stars: 5,
-    amenities: ['pool_in', 'pool_out', 'spa', 'gym', 'beach', 'courts', 'cinema', 'kids', 'security', 'sauna'],
+    amenities: ['pool_in', 'pool_out', 'jacuzzi', 'spa', 'sauna', 'gym', 'courts', 'squash', 'beach', 'grill', 'kids', 'playground', 'games', 'cinema', 'party', 'concierge', 'laundry', 'wifi', 'security', 'generator', 'guest_parking'],
+    beachMeters: 0,
+    elevators: 6,
+    pets: true,
     certifiedAt: '2026-09-15',
     scene: { shape: 'twin', time: 'night', seed: 61 },
     tagline: { es: 'Dos torres gemelas a pasos de la península.', pt: 'Duas torres gêmeas a passos da península.' },
@@ -218,7 +289,10 @@ export const BUILDINGS: Building[] = [
     units: 80,
     architects: 'Estudio Arocena Rius',
     stars: 4,
-    amenities: ['pool_in', 'pool_out', 'gym', 'beach', 'courts', 'security', 'kids'],
+    amenities: ['pool_in', 'pool_out', 'gym', 'courts', 'padel', 'beach', 'grill', 'kids', 'playground', 'games', 'wifi', 'security', 'guest_parking'],
+    beachMeters: 50,
+    elevators: 3,
+    pets: true,
     certifiedAt: '2026-09-28',
     scene: { shape: 'stepped', time: 'day', seed: 71 },
     tagline: { es: 'Terrazas profundas en la Brava tranquila.', pt: 'Terraços profundos na Brava tranquila.' },
@@ -240,7 +314,11 @@ export const BUILDINGS: Building[] = [
     units: 88,
     architects: 'Bonomi Carrau',
     stars: 4,
-    amenities: ['pool_in', 'pool_out', 'gym', 'sauna', 'courts', 'security'],
+    amenities: ['pool_in', 'pool_out', 'sauna', 'gym', 'courts', 'garden', 'grill', 'playground', 'party', 'laundry', 'security', 'generator', 'guest_parking'],
+    beachMeters: 0,
+    elevators: 3,
+    pets: false,
+    renovated: 2024,
     certifiedAt: '2026-10-05',
     scene: { shape: 'slab', time: 'dusk', seed: 83 },
     tagline: { es: 'La Mansa amplia, con parque y canchas.', pt: 'A Mansa ampla, com parque e quadras.' },
@@ -262,7 +340,10 @@ export const BUILDINGS: Building[] = [
     units: 40,
     architects: 'Taller Mazzini Otero',
     stars: 5,
-    amenities: ['pool_in', 'spa', 'gym', 'security', 'concierge', 'cinema'],
+    amenities: ['pool_in', 'jacuzzi', 'spa', 'solarium', 'gym', 'cinema', 'restaurant', 'concierge', 'housekeeping', 'cowork', 'wifi', 'security', 'generator'],
+    beachMeters: 100,
+    elevators: 2,
+    pets: false,
     certifiedAt: '2026-09-09',
     scene: { shape: 'curved', time: 'golden', seed: 97 },
     tagline: { es: 'Los veleros del puerto, debajo de su terraza.', pt: 'Os veleiros do porto, logo abaixo do seu terraço.' },
@@ -284,7 +365,10 @@ export const BUILDINGS: Building[] = [
     units: 150,
     architects: 'Galli Sienra Arquitectos',
     stars: 5,
-    amenities: ['pool_in', 'pool_out', 'spa', 'gym', 'beach', 'courts', 'cinema', 'kids', 'security', 'sauna', 'concierge', 'cowork'],
+    amenities: ['pool_in', 'pool_out', 'jacuzzi', 'spa', 'sauna', 'solarium', 'gym', 'courts', 'padel', 'squash', 'beach', 'grill', 'kids', 'playground', 'games', 'cinema', 'party', 'restaurant', 'concierge', 'housekeeping', 'laundry', 'cowork', 'wifi', 'security', 'generator', 'guest_parking', 'ev_charger'],
+    beachMeters: 0,
+    elevators: 6,
+    pets: true,
     certifiedAt: '2026-09-01',
     scene: { shape: 'tower', time: 'night', seed: 109 },
     tagline: { es: 'La torre más alta de la Brava, con vista a la isla de Lobos.', pt: 'A torre mais alta da Brava, com vista para a ilha de Lobos.' },
@@ -315,8 +399,11 @@ export type Unit = {
   pet: boolean
   channel: Channel
   prices: Prices
+  /** Periods already rented (marked by the owner); shown as "Alquilado". */
   booked: PeriodId[]
   ownerId?: string
+  /** How interested tenants reach the advertiser (owner or agency). */
+  contact?: { phone: string; whatsapp: boolean }
   photos?: string[]
   /** View orientation used for scenes. */
   view: 'frente' | 'lateral' | 'parque'
@@ -413,3 +500,12 @@ export const UNITS: Unit[] = SEEDS.map(([id, buildingId, floor, unit, bedrooms, 
 }))
 
 export const DEMO_OWNER = { id: 'demo-owner', name: 'Valentina Rossi', email: 'valentina@ejemplo.com' }
+
+/** Common co-ownership rules shown on every building's "ficha madre". */
+export const BUILDING_RULES: L10n[] = [
+  { es: 'Horario de descanso de 23:00 a 08:00 h en unidades y áreas comunes.', pt: 'Horário de silêncio das 23:00 às 08:00 h nas unidades e áreas comuns.' },
+  { es: 'Registro de todos los huéspedes en portería al ingresar.', pt: 'Registro de todos os hóspedes na portaria ao chegar.' },
+  { es: 'Uso de piscinas, spa y gimnasio según los horarios y el aforo del edificio.', pt: 'Uso de piscinas, spa e academia conforme horários e capacidade do edifício.' },
+  { es: 'No se permiten fiestas ni eventos en las unidades.', pt: 'Não são permitidas festas nem eventos nas unidades.' },
+  { es: 'Estacionamiento solo en la cochera asignada a la unidad.', pt: 'Estacionamento apenas na vaga atribuída à unidade.' },
+]

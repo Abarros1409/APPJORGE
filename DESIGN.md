@@ -11,7 +11,7 @@ Estado de ánimo: **"Ocaso en la Mansa"**. Azul Atlántico profundo, luz de atar
 | Superficie | Registro | Estrategia de color | Motion |
 |---|---|---|---|
 | Home, landing de propietarios, administraciones y ficha del edificio | brand | **Committed**: el azul `ink` cubre entre el 30% y el 60% de la superficie (hero, bloques narrativos y pie de página) | Storytelling con GSAP en el hero (de la tarde a la noche) y revelados por scroll nativos |
-| Resultados, unidad, checkout, reserva, publicar y panel | product | **Restrained**: blanco puro, `marine` para la selección y `ocaso` solo en la acción principal | Transiciones de 160 a 240 ms que solo comunican estado |
+| Resultados, unidad, consulta, publicar y panel | product | **Restrained**: blanco puro, `marine` para la selección y `ocaso` solo en la acción principal | Transiciones de 160 a 240 ms que solo comunican estado |
 
 ## Color (OKLCH)
 
