@@ -20,6 +20,8 @@ Abre en `http://localhost:5173`. Para el build de producción (incluye service w
 npm run build && npm run preview
 ```
 
+**Vercel:** `vercel.json` ya trae la configuración: build de Vite, redirección de todas las rutas a la app (así los links internos y las recargas no dan 404) y caché correcto para la PWA. Cada cambio que llega a la rama de producción del proyecto en Vercel se publica solo.
+
 ## Qué incluye (las 8 pantallas del pliego)
 
 | Ruta | Pantalla | Funciones |
